@@ -1,14 +1,23 @@
 {
   "name": "openfilm",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "AI驱动的图片和视频生成工具",
+  "author": "OpenFilm Team",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"vite\"",
     "server": "node server/index.js",
     "build": "vite build",
     "preview": "vite preview",
-    "setup:local-models": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'setup-local-models.bat' : 'bash setup-local-models.sh', {stdio: 'inherit'})\""
+    "setup:local-models": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'setup-local-models.bat' : 'bash setup-local-models.sh', {stdio: 'inherit'})\"",
+    
+    "electron:dev": "concurrently \"vite\" \"node electron/wait-for-vite.js && electron .\"",
+    "electron:build": "vite build && electron-builder",
+    "electron:build:mac": "vite build && electron-builder --mac",
+    "electron:build:win": "vite build && electron-builder --win",
+    "electron:build:linux": "vite build && electron-builder --linux"
   },
   "dependencies": {
     "@fal-ai/client": "^1.8.0",
@@ -20,6 +29,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@types/three": "^0.182.0",
+    "electron-store": "^8.2.0",
     "face-api.js": "^0.22.2",
     "form-data": "^4.0.5",
     "lucide-react": "^0.556.0",
@@ -36,8 +46,60 @@
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12",
     "express": "^5.2.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
+  },
+  "build": {
+    "appId": "com.openfilm.app",
+    "productName": "OpenFilm",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "server/**/*",
+      "public/**/*",
+      "!node_modules/**/*",
+      "node_modules/electron-store/**/*",
+      "node_modules/conf/**/*",
+      "node_modules/atomically/**/*",
+      "node_modules/dot-prop/**/*",
+      "node_modules/env-paths/**/*",
+      "node_modules/ajv/**/*",
+      "node_modules/ajv-formats/**/*",
+      "node_modules/json-schema-traverse/**/*",
+      "node_modules/fast-deep-equal/**/*",
+      "node_modules/uri-js/**/*",
+      "node_modules/punycode.js/**/*",
+      "node_modules/semver/**/*"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "icon": "public/icon.icns",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "public/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "public/icon.png",
+      "category": "Graphics"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

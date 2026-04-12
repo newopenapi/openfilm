@@ -53,6 +53,7 @@ import { useTikTokImport } from './hooks/useTikTokImport';
 import { useStoryboardGenerator } from './hooks/useStoryboardGenerator';
 import { StoryboardGeneratorModal } from './components/modals/StoryboardGeneratorModal';
 import { StoryboardVideoModal } from './components/modals/StoryboardVideoModal';
+import { SettingsModal } from './components/modals/SettingsModal';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -91,6 +92,21 @@ export default function App() {
   });
 
   const [canvasTheme, setCanvasTheme] = useState<'dark' | 'light'>('dark');
+  
+  // Settings modal state (Electron)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isElectron, setIsElectron] = useState(false);
+  
+  // Detect if running in Electron
+  useEffect(() => {
+    const checkElectron = () => {
+      const electron = (window as any).electronAPI;
+      if (electron?.isElectron) {
+        setIsElectron(true);
+      }
+    };
+    checkElectron();
+  }, []);
   
   // Language state (i18n)
   const [currentLang, setCurrentLang] = useState<Language>(getLanguage());
@@ -1062,6 +1078,8 @@ export default function App() {
           lastAutoSaveTime={lastAutoSaveTime}
           currentLang={currentLang}
           onToggleLanguage={handleToggleLanguage}
+          isElectron={isElectron}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
       )}
 
@@ -1419,6 +1437,15 @@ export default function App() {
         mediaUrl={expandedImageUrl}
         onClose={handleCloseExpand}
       />
+
+      {/* Settings Modal (Electron) */}
+      {isElectron && (
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          isElectron={isElectron}
+        />
+      )}
     </div >
   );
 }

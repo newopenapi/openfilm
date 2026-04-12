@@ -30,6 +30,13 @@ AI 驱动的图片和视频生成工具，支持 GPT Image、Gemini、Kling AI�
 
 ## 快速开始
 
+### 两种运行方式
+
+| 方式 | 说明 | 适用场景 |
+|------|------|----------|
+| **Web 开发** | `npm run dev` | 日常开发、调试 |
+| **桌面应用** | Electron 打包 | 分发给用户、无需安装 Node.js |
+
 ### 环境要求
 
 - Node.js 18+
@@ -208,6 +215,56 @@ docker compose up -d --build
 3. 上传代码或使用 Git 克隆
 4. 配置 .env 文件
 5. 设置启动命令：`npm run dev` 或使用 PM2
+
+## 桌面应用（Electron）
+
+OpenFilm 支持打包成桌面应用，一键安装即可使用，无需配置 Node.js 环境。
+
+### 安装 Electron 依赖
+
+```bash
+npm install
+```
+
+### 开发模式（Electron）
+
+```bash
+npm run electron:dev
+```
+
+### 打包桌面应用
+
+```bash
+# 打包所有平台
+npm run electron:build
+
+# 仅打包 macOS
+npm run electron:build:mac
+
+# 仅打包 Windows
+npm run electron:build:win
+
+# 仅打包 Linux
+npm run electron:build:linux
+```
+
+打包后的安装包位于 `release/` 目录。
+
+### 桌面版特性
+
+- ✅ **一体化打包** - 服务端和客户端一起打包
+- ✅ **内置设置界面** - APP 内直接配置 API Key
+- ✅ **安全存储** - 使用 electron-store 加密存储密钥
+- ✅ **导入 .env** - 支持导入已有的配置文件
+- ✅ **一键安装** - 用户下载安装包，双击即可运行
+
+### 桌面版配置 API Key
+
+首次启动桌面版时，点击右上角的 ⚙️ 设置按钮：
+
+1. **手动输入** - 直接在设置界面填入 API Key
+2. **导入 .env** - 点击按钮导入已有的 `.env` 文件
+3. **获取密钥** - 点击 "获取密钥" 链接跳转到对应平台
 
 ## 模型支持
 

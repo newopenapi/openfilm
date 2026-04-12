@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { Plus, Save, Loader2 } from 'lucide-react';
+import { Plus, Save, Loader2, Settings } from 'lucide-react';
 import { Language } from '../i18n';
 
 interface TopBarProps {
@@ -30,6 +30,9 @@ interface TopBarProps {
     // Language
     currentLang: Language;
     onToggleLanguage: () => void;
+    // Settings (Electron)
+    isElectron?: boolean;
+    onOpenSettings?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -48,7 +51,9 @@ export const TopBar: React.FC<TopBarProps> = ({
     canvasTheme,
     onToggleTheme,
     currentLang,
-    onToggleLanguage
+    onToggleLanguage,
+    isElectron,
+    onOpenSettings
 }) => {
     const [showNewConfirm, setShowNewConfirm] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -180,6 +185,19 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
                         )}
                     </button>
+                    {/* Settings Button (Electron only) */}
+                    {isElectron && (
+                        <button
+                            onClick={onOpenSettings}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border ${canvasTheme === 'dark'
+                                ? 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-800'
+                                : 'bg-white border-neutral-200 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 shadow-sm'
+                                }`}
+                            title={currentLang === 'en' ? 'Settings' : '设置'}
+                        >
+                            <Settings size={18} />
+                        </button>
+                    )}
                     {/* Language Toggle Button */}
                     <button
                         onClick={onToggleLanguage}
