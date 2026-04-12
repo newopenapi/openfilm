@@ -5,7 +5,7 @@
   "description": "AI驱动的图片和视频生成工具",
   "author": "OpenFilm Team",
   "type": "module",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"vite\"",
     "server": "node server/index.js",
@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "setup:local-models": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'setup-local-models.bat' : 'bash setup-local-models.sh', {stdio: 'inherit'})\"",
     
-    "electron:dev": "concurrently \"vite\" \"node electron/wait-for-vite.js && electron .\"",
+    "electron:dev": "concurrently \"vite\" \"node electron/wait-for-vite.cjs && electron .\"",
     "electron:build": "vite build && electron-builder",
     "electron:build:mac": "vite build && electron-builder --mac",
     "electron:build:win": "vite build && electron-builder --win",
@@ -78,7 +78,7 @@
       "node_modules/semver/**/*"
     ],
     "extraMetadata": {
-      "main": "electron/main.js"
+      "main": "electron/main.cjs"
     },
     "asar": true,
     "mac": {
