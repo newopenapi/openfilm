@@ -281,7 +281,7 @@ export const TwitterPostModal: React.FC<TwitterPostModalProps> = ({
                             <div className="text-center">
                                 <h3 className="text-lg font-semibold text-white">Connect your X account</h3>
                                 <p className="text-sm text-neutral-400 mt-1">
-                                    Sign in to post directly from TwitCanva
+                                    Sign in to post directly from OpenFilm
                                 </p>
                             </div>
                             <button

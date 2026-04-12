@@ -61,3 +61,56 @@ export const KlingIcon = Kling.Color;
  * Usage: <HailuoIcon size={14} /> for colored version
  */
 export const HailuoIcon = Minimax.Color;
+
+/**
+ * Volcano Engine (火山方舟) Logo Icon
+ * ByteDance's Volcano Engine platform logo
+ * Usage: <VolcanoIcon size={14} />
+ */
+export const VolcanoIcon: React.FC<IconProps> = ({ size = 16, className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        className={className}
+    >
+        {/* Volcano flame icon - simplified brand representation */}
+        <path
+            d="M12 2C10.5 4 9 5 9 8C9 9.5 9.5 11 10 12H14C14.5 11 15 9.5 15 8C15 5 13.5 4 12 2Z"
+            fill="#FF6B35"
+        />
+        <path
+            d="M12 5C11 7 10 7.5 10 10C10 11 10.3 12 11 12H13C13.7 12 14 11 14 10C14 7.5 13 7 12 5Z"
+            fill="#FF8C42"
+        />
+        {/* Mountain base */}
+        <path
+            d="M4 20L12 10L20 20H4Z"
+            fill="#4A90D9"
+        />
+        <path
+            d="M7 20L12 13L17 20H7Z"
+            fill="#2D5A8A"
+        />
+    </svg>
+);
+
+/**
+ * Volcano Engine Logo (Simplified flame-like icon)
+ * Alternative icon for the Volcano/Seedance brand
+ */
+export const SeedanceIcon: React.FC<IconProps> = ({ size = 16, className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        className={className}
+    >
+        <path d="M12 2L4 12l3 2-2 6 11-10-3-2 2-6z"/>
+        <path d="M12 6l-4 5 1.5 1L12 9l2.5 3L16 11l-4-5z" fillOpacity="0.6"/>
+    </svg>
+);

@@ -20,6 +20,7 @@ import {
   HardDrive
 } from 'lucide-react';
 import { ContextMenuState, NodeType } from '../types';
+import { t } from '../i18n';
 
 interface ContextMenuProps {
   state: ContextMenuState;
@@ -210,13 +211,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         <div className="p-1.5 flex flex-col gap-0.5">
           <MenuItem
             icon={<Upload size={16} />}
-            label="Upload"
+            label={t('upload')}
             onClick={handleUploadClick}
             canvasTheme={canvasTheme}
           />
           <MenuItem
             icon={<Layers size={16} />}
-            label="Add Assets"
+            label={t('addAssets')}
             onClick={() => {
               if (onAddAssets) {
                 onAddAssets();
@@ -229,7 +230,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
           <MenuItem
             icon={<Plus size={16} />}
-            label="Add Nodes"
+            label={t('addNodes')}
             rightSlot={<ChevronRight size={14} className={canvasTheme === 'dark' ? 'text-neutral-500' : 'text-neutral-400'} />}
             onClick={() => setView('add-nodes')}
             active={false}
@@ -240,7 +241,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
           <MenuItem
             icon={<Undo2 size={16} />}
-            label="Undo"
+            label={t('undo')}
             shortcut="CtrlZ"
             onClick={handleUndo}
             disabled={!canUndo}
@@ -248,7 +249,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           />
           <MenuItem
             icon={<Redo2 size={16} />}
-            label="Redo"
+            label={t('redo')}
             shortcut="ShiftCtrlZ"
             onClick={handleRedo}
             disabled={!canRedo}
@@ -258,7 +259,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
           <MenuItem
             icon={<Clipboard size={16} />}
-            label="Paste"
+            label={t('paste')}
             shortcut="CtrlV"
             onClick={handlePaste}
             canvasTheme={canvasTheme}
@@ -269,7 +270,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   }
 
   // 3. Add Nodes Menu (Global Submenu OR Connector Default)
-  const title = isConnector ? "Generate from this node" : "Add Nodes";
+  const title = isConnector ? t('generateFromNode') : t('addNodes');
 
   return (
     <div
@@ -291,22 +292,22 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       <div className="p-2 flex flex-col gap-1 max-h-[400px] overflow-y-auto">
         <MenuItem
           icon={<Type size={18} />}
-          label={isConnector ? "Text Generation" : "Text"}
-          desc={isConnector ? "Script, Ad copy, Brand text" : undefined}
+          label={isConnector ? t('textGeneration') : t('text')}
+          desc={isConnector ? t('scriptAdcopyBrandText') : undefined}
           onClick={() => onSelectType(NodeType.TEXT)}
           canvasTheme={canvasTheme}
         />
         <MenuItem
           icon={<ImageIcon size={18} />}
-          label={isConnector ? "Image Generation" : "Image"}
-          desc={isConnector ? undefined : "Promotional image, poster, cover"}
+          label={isConnector ? t('imageGeneration') : t('image')}
+          desc={isConnector ? undefined : t('promotionalImagePosterCover')}
           active={false}
           onClick={() => onSelectType(NodeType.IMAGE)}
           canvasTheme={canvasTheme}
         />
         <MenuItem
           icon={<Video size={18} />}
-          label={isConnector ? "Video Generation" : "Video"}
+          label={isConnector ? t('videoGeneration') : t('video')}
           onClick={() => onSelectType(NodeType.VIDEO)}
           canvasTheme={canvasTheme}
         />
@@ -314,7 +315,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         {!isConnector && (
           <MenuItem
             icon={<PenTool size={18} />}
-            label="Image Editor"
+            label={t('imageEditor')}
             onClick={() => onSelectType(NodeType.IMAGE_EDITOR)}
             canvasTheme={canvasTheme}
           />
@@ -323,7 +324,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         {!isConnector && (
           <MenuItem
             icon={<Film size={18} />}
-            label="Video Editor"
+            label={t('videoEditor')}
             onClick={() => onSelectType(NodeType.VIDEO_EDITOR)}
             canvasTheme={canvasTheme}
           />
@@ -332,21 +333,21 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         {/* --- Local Model Section --- */}
         <div className={`my-2 border-t mx-2 ${canvasTheme === 'dark' ? 'border-neutral-800' : 'border-neutral-100'}`} />
         <div className={`px-2 py-1 text-xs font-medium ${canvasTheme === 'dark' ? 'text-neutral-500' : 'text-neutral-400'}`}>
-          Local Models (Open Source)
+          {t('localModelsOpenSource')}
         </div>
 
         <MenuItem
           icon={<HardDrive size={18} />}
-          label="Local Image Model"
-          desc="Use downloaded open-source models"
+          label={t('localImageModel')}
+          desc={t('useDownloadedOpenSourceModels')}
           badge="NEW"
           onClick={() => onSelectType(NodeType.LOCAL_IMAGE_MODEL)}
           canvasTheme={canvasTheme}
         />
         <MenuItem
           icon={<HardDrive size={18} />}
-          label="Local Video Model"
-          desc="AnimateDiff, SVD, and more"
+          label={t('localVideoModel')}
+          desc={t('animateDiffSvdMore')}
           badge="NEW"
           onClick={() => onSelectType(NodeType.LOCAL_VIDEO_MODEL)}
           canvasTheme={canvasTheme}

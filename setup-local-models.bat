@@ -8,7 +8,7 @@ REM ============================================================================
 
 echo.
 echo ========================================
-echo  TwitCanva Local Models Setup
+echo  OpenFilm Local Models Setup
 echo ========================================
 echo.
 

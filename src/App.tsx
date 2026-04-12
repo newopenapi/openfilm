@@ -1,7 +1,7 @@
 /**
  * App.tsx
  * 
- * Main application component for TwitCanva.
+ * Main application component for OpenFilm.
  * Orchestrates canvas, nodes, connections, and user interactions.
  * Uses custom hooks for state management and logic separation.
  */
@@ -14,6 +14,7 @@ import { ConnectionsLayer } from './components/canvas/ConnectionsLayer';
 import { ContextMenu } from './components/ContextMenu';
 import { ContextMenuState, NodeData, NodeStatus, NodeType } from './types';
 import { generateImage, generateVideo } from './services/generationService';
+import { initI18n, getLanguage, setLanguage, t, Language } from './i18n';
 import { useCanvasNavigation } from './hooks/useCanvasNavigation';
 import { useNodeManagement } from './hooks/useNodeManagement';
 import { useConnectionDragging } from './hooks/useConnectionDragging';
@@ -90,6 +91,25 @@ export default function App() {
   });
 
   const [canvasTheme, setCanvasTheme] = useState<'dark' | 'light'>('dark');
+  
+  // Language state (i18n)
+  const [currentLang, setCurrentLang] = useState<Language>(getLanguage());
+  const [, forceUpdate] = useState({});
+  
+  // Initialize i18n on mount
+  useEffect(() => {
+    initI18n();
+    setCurrentLang(getLanguage());
+  }, []);
+  
+  // Language toggle function
+  const handleToggleLanguage = () => {
+    const newLang = currentLang === 'en' ? 'zh' : 'en';
+    setLanguage(newLang);
+    setCurrentLang(newLang);
+    // Force re-render for all translated components
+    forceUpdate({});
+  };
 
   // Panel state management (history, chat, asset library, expand)
   const {
@@ -1040,6 +1060,8 @@ export default function App() {
           canvasTheme={canvasTheme}
           onToggleTheme={() => setCanvasTheme(prev => prev === 'dark' ? 'light' : 'dark')}
           lastAutoSaveTime={lastAutoSaveTime}
+          currentLang={currentLang}
+          onToggleLanguage={handleToggleLanguage}
         />
       )}
 
@@ -1280,7 +1302,7 @@ export default function App() {
       {/* Zoom Slider */}
       {!storyboardGenerator.isModalOpen && !isTikTokModalOpen && (
         <div className={`fixed bottom-6 left-16 rounded-full px-4 py-2 flex items-center gap-3 z-50 transition-colors duration-300 ${canvasTheme === 'dark' ? 'bg-neutral-900 border border-neutral-700' : 'bg-white/90 backdrop-blur-sm border border-neutral-200'}`} >
-          <span className={`text-xs ${canvasTheme === 'dark' ? 'text-neutral-400' : 'text-neutral-500'}`}>Zoom</span>
+          <span className={`text-xs ${canvasTheme === 'dark' ? 'text-neutral-400' : 'text-neutral-500'}`}>{t('zoom')}</span>
           <input
             type="range"
             min="0.1"

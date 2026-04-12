@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Filter, Trash2 } from 'lucide-react';
+import { t } from '../i18n';
 
 interface LibraryAsset {
     id: string;
@@ -18,15 +19,16 @@ interface AssetLibraryPanelProps {
     canvasTheme?: 'dark' | 'light';
 }
 
-const CATEGORIES = [
-    'All',
-    'Character',
-    'Scene',
-    'Item',
-    'Style',
-    'Sound Effect',
-    'Others'
-];
+// Category keys for i18n
+const CATEGORY_KEYS = [
+    'categoryAll',
+    'categoryCharacter',
+    'categoryScene',
+    'categoryItem',
+    'categoryStyle',
+    'categorySoundEffect',
+    'categoryOthers'
+] as const;
 
 export const AssetLibraryPanel: React.FC<AssetLibraryPanelProps> = ({
     isOpen,
@@ -36,7 +38,7 @@ export const AssetLibraryPanel: React.FC<AssetLibraryPanelProps> = ({
     variant = 'panel',
     canvasTheme = 'dark'
 }) => {
-    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [selectedCategory, setSelectedCategory] = useState('categoryAll');
     const [assets, setAssets] = useState<LibraryAsset[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -91,7 +93,7 @@ export const AssetLibraryPanel: React.FC<AssetLibraryPanelProps> = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-neutral-800' : 'border-neutral-200'}`}>
-                        <h2 className={`text-lg font-medium pl-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>Asset Library</h2>
+                        <h2 className={`text-lg font-medium pl-2 ${isDark ? 'text-white' : 'text-neutral-900'}`}>{t('assetLibrary')}</h2>
                         <button onClick={onClose} className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-400 hover:text-white' : 'hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900'}`}>
                             <X size={20} />
                         </button>
@@ -142,7 +144,7 @@ const AssetLibraryContent = ({
     const isDark = canvasTheme === 'dark';
 
     const filteredAssets = assets.filter((asset: any) =>
-        selectedCategory === 'All' || asset.category === selectedCategory
+        selectedCategory === 'categoryAll' || asset.category === selectedCategory
     );
 
     const handleDeleteClick = (e: React.MouseEvent, id: string) => {
@@ -166,16 +168,16 @@ const AssetLibraryContent = ({
             <div className="p-4 flex flex-col gap-4 h-full overflow-hidden">
                 {/* Filters */}
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide shrink-0">
-                    {CATEGORIES.map(cat => (
+                    {CATEGORY_KEYS.map(catKey => (
                         <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${selectedCategory === cat
+                            key={catKey}
+                            onClick={() => setSelectedCategory(catKey)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${selectedCategory === catKey
                                 ? isDark ? 'bg-neutral-100 text-black border-white' : 'bg-neutral-900 text-white border-neutral-900'
                                 : isDark ? 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-600' : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300'
                                 }`}
                         >
-                            {cat}
+                            {t(catKey)}
                         </button>
                     ))}
                 </div>
@@ -189,10 +191,10 @@ const AssetLibraryContent = ({
                     }}
                 >
                     {loading ? (
-                        <div className="col-span-full text-center py-10 text-neutral-500">Loading...</div>
+                        <div className="col-span-full text-center py-10 text-neutral-500">{t('loading')}</div>
                     ) : filteredAssets.length === 0 ? (
                         <div className="col-span-full text-center py-10 text-neutral-500 text-sm">
-                            No assets found in this category.
+                            {t('noAssetsInCategory')}
                         </div>
                     ) : (
                         filteredAssets.map((asset: any) => (
@@ -219,19 +221,19 @@ const AssetLibraryContent = ({
                                 {/* Delete Button or Confirmation */}
                                 {deleteConfirmId === asset.id ? (
                                     <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-2 z-20 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
-                                        <span className="text-white text-xs font-medium">Delete?</span>
+                                        <span className="text-white text-xs font-medium">{t('deleteConfirm')}</span>
                                         <div className="flex gap-2">
                                             <button
                                                 className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors"
                                                 onClick={(e) => handleConfirmDelete(e, asset.id)}
                                             >
-                                                Yes
+                                                {t('yes')}
                                             </button>
                                             <button
                                                 className="px-2 py-1 bg-neutral-700 hover:bg-neutral-600 text-white text-xs rounded transition-colors"
                                                 onClick={handleCancelDelete}
                                             >
-                                                No
+                                                {t('no')}
                                             </button>
                                         </div>
                                     </div>
@@ -239,7 +241,7 @@ const AssetLibraryContent = ({
                                     <button
                                         className="absolute top-1 right-1 p-1.5 bg-black/60 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 z-10"
                                         onClick={(e) => handleDeleteClick(e, asset.id)}
-                                        title="Delete Asset"
+                                        title={t('deleteAssetTooltip')}
                                     >
                                         <Trash2 size={14} />
                                     </button>

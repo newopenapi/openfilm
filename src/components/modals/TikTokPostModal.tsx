@@ -281,7 +281,7 @@ export const TikTokPostModal: React.FC<TikTokPostModalProps> = ({
                             <div className="text-center">
                                 <h3 className="text-lg font-semibold text-white">Connect your TikTok account</h3>
                                 <p className="text-sm text-neutral-400 mt-1">
-                                    Sign in to post videos directly from TwitCanva
+                                    Sign in to post videos directly from OpenFilm
                                 </p>
                             </div>
                             <button

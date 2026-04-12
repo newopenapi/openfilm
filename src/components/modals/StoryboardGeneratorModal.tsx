@@ -9,6 +9,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { X, ChevronRight, ChevronLeft, Loader2, Film, Users, PenTool, Sparkles, Check, Edit3, Wand2, Eye, ChevronDown } from 'lucide-react';
 import { CharacterAsset, SceneScript, StoryboardState } from '../../hooks/useStoryboardGenerator';
 import { StoryInput } from '../StoryInput';
+import { t } from '../../i18n';
 
 // ============================================================================
 // IMAGE MODELS (Copied from NodeControls.tsx for model selection)
@@ -78,11 +79,11 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
 
     // Step definitions for progress bar
     const stepDefinitions = [
-        { id: 'characters', label: 'Characters', icon: Users },
-        { id: 'story', label: 'Story', icon: PenTool },
-        { id: 'scripts', label: 'Scripts', icon: Film },
-        { id: 'preview', label: 'Preview', icon: Eye },
-        { id: 'generate', label: 'Generate', icon: Sparkles }
+        { id: 'characters', label: t('characters'), icon: Users },
+        { id: 'story', label: t('story'), icon: PenTool },
+        { id: 'scripts', label: t('scripts'), icon: Film },
+        { id: 'preview', label: t('preview'), icon: Eye },
+        { id: 'generate', label: t('generate'), icon: Sparkles }
     ];
 
     const currentStepIndex = stepDefinitions.findIndex(s => s.id === state.step);
@@ -252,8 +253,8 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             <Film size={20} className="text-white" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Storyboard Generator</h2>
-                            <p className="text-xs text-neutral-500">Create scenes with AI</p>
+                            <h2 className="text-lg font-semibold text-white">{t('storyboardGenerator')}</h2>
+                            <p className="text-xs text-neutral-500">{t('createScenesWithAI')}</p>
                         </div>
                     </div>
                     <button
@@ -327,9 +328,9 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                 {/* Characters Step Header - Fixed outside scroll area */}
                 {state.step === 'characters' && (
                     <div className="px-6 pt-6 pb-4 border-b border-neutral-800/30">
-                        <h3 className="text-white font-medium mb-2">Select Reference Images</h3>
+                        <h3 className="text-white font-medium mb-2">{t('selectCharactersTip')}</h3>
                         <p className="text-neutral-400 text-sm mb-4">
-                            Choose up to 3 reference images from your Asset Library to guide the AI.
+                            {t('chooseReferenceImages')}
                         </p>
 
                         {/* Category Dropdown */}
@@ -340,9 +341,9 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                     className="w-full flex items-center justify-between px-4 py-2.5 bg-neutral-900 border border-neutral-700 rounded-xl text-sm text-white hover:border-neutral-600 transition-colors"
                                 >
                                     <span className="flex items-center gap-2">
-                                        <span className="text-neutral-400">Category:</span>
+                                        <span className="text-neutral-400">{t('categoryLabel')}</span>
                                         <span className="font-medium">{selectedCategory}</span>
-                                        <span className="text-neutral-500 text-xs">({filteredAssets.length} items)</span>
+                                        <span className="text-neutral-500 text-xs">({filteredAssets.length} {t('itemsCount')})</span>
                                     </span>
                                     <ChevronDown size={16} className={`text-neutral-400 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
                                 </button>
@@ -398,14 +399,14 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             ) : characterAssets.length === 0 ? (
                                 <div className="text-center py-12 text-neutral-500">
                                     <Users size={48} className="mx-auto mb-3 opacity-50" />
-                                    <p>No images found in Asset Library</p>
-                                    <p className="text-xs mt-1">Add image assets to your library to use them as character references</p>
+                                    <p>{t('noImagesInLibrary')}</p>
+                                    <p className="text-xs mt-1">{t('addImageAssetsTip')}</p>
                                 </div>
                             ) : filteredAssets.length === 0 ? (
                                 <div className="text-center py-12 text-neutral-500">
                                     <Users size={48} className="mx-auto mb-3 opacity-50" />
-                                    <p>No images in "{selectedCategory}" category</p>
-                                    <p className="text-xs mt-1">Try selecting a different category</p>
+                                    <p>{t('noImagesInCategory')} "{selectedCategory}"</p>
+                                    <p className="text-xs mt-1">{t('tryDifferentCategory')}</p>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-3 gap-4">
@@ -459,16 +460,16 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                     {/* Step 2: Story Input */}
                     {state.step === 'story' && (
                         <div>
-                            <h3 className="text-white font-medium mb-2">Write Your Story</h3>
+                            <h3 className="text-white font-medium mb-2">{t('story')}</h3>
                             <p className="text-neutral-400 text-sm mb-4">
-                                Describe the story you want to visualize. AI will break it into {state.sceneCount} scenes.
+                                {t('enterStoryTip')}
                             </p>
 
                             {/* Selected Reference Images - clickable to insert @ mention */}
                             {state.selectedCharacters.length > 0 && (
                                 <div className="mb-4 p-3 bg-neutral-900/50 rounded-xl border border-neutral-800">
                                     <p className="text-xs text-neutral-400 mb-2">
-                                        Selected references — click to insert @mention in story:
+                                        {t('selectedCharacters')} — {t('clickToMentionTip')}
                                     </p>
                                     <div className="flex flex-wrap gap-2">
                                         {state.selectedCharacters.map(asset => (
@@ -500,7 +501,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             {/* Scene Count Slider */}
                             <div className="mb-4">
                                 <label className="block text-sm text-neutral-300 mb-2">
-                                    Number of Scenes: <span className="text-purple-400 font-medium">{state.sceneCount}</span>
+                                    {t('numberOfScenes')} <span className="text-purple-400 font-medium">{state.sceneCount}</span>
                                 </label>
                                 <input
                                     type="range"
@@ -525,13 +526,13 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                 {state.isBrainstorming ? (
                                     <>
                                         <Loader2 size={14} className="animate-spin" />
-                                        <span>Brainstorming...</span>
+                                        <span>{t('brainstorming')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <Wand2 size={14} className="group-hover:rotate-12 transition-transform" />
-                                        <span className="underline decoration-dashed underline-offset-2">Brainstorm with AI</span>
-                                        <span className="text-neutral-500 text-xs">(let AI write a story for you)</span>
+                                        <span className="underline decoration-dashed underline-offset-2">{t('brainstormWithAI')}</span>
+                                        <span className="text-neutral-500 text-xs">{t('letAIWriteStory')}</span>
                                     </>
                                 )}
                             </button>
@@ -549,7 +550,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                     }}
                                     placeholder={state.selectedCharacters.length > 0
                                         ? `Type @ to mention assets like @${state.selectedCharacters[0]?.name}...`
-                                        : "Once upon a time, in a magical forest..."}
+                                        : t('onceUponATime')}
                                     assets={state.selectedCharacters}
                                     className="min-h-[12rem]"
                                 />
@@ -558,7 +559,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                 {showMentionPicker && mentionSuggestions.length > 0 && (
                                     <div className="absolute left-4 top-10 w-64 bg-neutral-900 border border-neutral-700 rounded-lg shadow-2xl overflow-hidden z-50">
                                         <div className="text-[10px] text-neutral-500 px-3 py-1 border-b border-neutral-700/50 bg-neutral-900">
-                                            Select reference (↑↓ to navigate, Enter to select)
+                                            {t('selectReferenceTip')}
                                         </div>
                                         <div className="max-h-48 overflow-y-auto">
                                             {mentionSuggestions.map((asset, index) => (
@@ -588,7 +589,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             </div>
                             <div className="flex justify-between items-start mt-2">
                                 <p className="text-xs text-neutral-500">
-                                    Tip: Be descriptive about scenes, actions, and emotions for better results.
+                                    {t('tipBeDescriptive')}
                                 </p>
                                 <button
                                     onClick={onOptimizeStory}
@@ -601,7 +602,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                     ) : (
                                         <Wand2 size={12} />
                                     )}
-                                    Optimize with AI
+                                    {t('optimizeWithAI')}
                                 </button>
                             </div>
                         </div>
@@ -610,9 +611,9 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                     {/* Step 3: Script Review */}
                     {state.step === 'scripts' && (
                         <div>
-                            <h3 className="text-white font-medium mb-2">Review & Edit Scripts</h3>
+                            <h3 className="text-white font-medium mb-2">{t('reviewScriptsTip')}</h3>
                             <p className="text-neutral-400 text-sm mb-4">
-                                AI generated {state.scripts.length} scene scripts. Click to edit.
+                                {t('AIgeneratedScenes').replace('{count}', String(state.scripts.length))}
                             </p>
 
                             <div className="space-y-3">
@@ -639,7 +640,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
 
                                             <div className="flex items-center justify-center text-purple-400/50 text-xs font-medium gap-2 pt-2">
                                                 <Loader2 size={12} className="animate-spin" />
-                                                Creating Scene {i + 1}...
+                                                {t('creatingScene').replace('{num}', String(i + 1))}
                                             </div>
                                         </div>
                                     ))
@@ -652,7 +653,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                         >
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-purple-400 text-sm font-medium">
-                                                    Scene {script.sceneNumber}
+                                                    {t('sceneLabel')} {script.sceneNumber}
                                                 </span>
                                                 <div className="flex items-center gap-2 text-xs text-neutral-500">
                                                     <span className="px-2 py-0.5 bg-neutral-800 rounded">
@@ -697,7 +698,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                     {/* STEP 4: PREVIEW COMPOSITE */}
                     {state.step === 'preview' && (
                         <div className="flex flex-col h-full">
-                            <h3 className="text-white font-medium mb-2">Preview Storyboard</h3>
+                            <h3 className="text-white font-medium mb-2">{t('previewCompositeTip')}</h3>
                             <p className="text-neutral-400 text-sm mb-4">
                                 Review the composite storyboard. This image will be used as a reference to generate individual scenes with consistent characters and environments.
                             </p>
@@ -706,8 +707,8 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                 {state.isGeneratingPreview ? (
                                     <div className="text-center">
                                         <Loader2 size={48} className="animate-spin text-purple-500 mx-auto mb-4" />
-                                        <p className="text-white font-medium">Generating Preview...</p>
-                                        <p className="text-neutral-400 text-sm mt-2">Creating a cohesive storyboard with Nano Banana Pro</p>
+                                        <p className="text-white font-medium">{t('generatingPreview')}</p>
+                                        <p className="text-neutral-400 text-sm mt-2">{t('creatingStoryboard')}</p>
                                     </div>
                                 ) : state.compositeImageUrl ? (
                                     <div className="relative w-full h-full flex items-center justify-center">
@@ -722,18 +723,18 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                                 className="bg-black/70 hover:bg-black/90 text-white px-3 py-1.5 rounded-lg text-xs font-medium backdrop-blur-sm flex items-center gap-2 border border-white/10"
                                             >
                                                 <Wand2 size={12} />
-                                                Regenerate
+                                                {t('regenerateScript')}
                                             </button>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="text-center text-neutral-500">
-                                        <p>No preview available</p>
+                                        <p>{t('notAvailable')}</p>
                                         <button
                                             onClick={onGenerateComposite}
                                             className="mt-4 text-purple-400 hover:text-purple-300 text-sm underline"
                                         >
-                                            Generate Preview
+                                            {t('generateCompositeTip')}
                                         </button>
                                     </div>
                                 )}
@@ -744,26 +745,26 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                     {/* STEP 5: GENERATE (Summary now, since model selection is removed) */}
                     {state.step === 'generate' && (
                         <div>
-                            <h3 className="text-white font-medium mb-2">Ready to Generate</h3>
+                            <h3 className="text-white font-medium mb-2">{t('readyToGenerate')}</h3>
                             <p className="text-neutral-400 text-sm mb-4">
-                                Determine the final output. The individual scenes will be extracted from your preview image.
+                                {t('determineFinalOutput')}
                             </p>
 
                             <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-4">
-                                <h4 className="text-white text-sm font-medium mb-2">Summary</h4>
+                                <h4 className="text-white text-sm font-medium mb-2">{t('summary')}</h4>
                                 <div className="grid grid-cols-2 gap-2 text-sm">
-                                    <div className="text-neutral-400">Characters:</div>
+                                    <div className="text-neutral-400">{t('charactersLabel')}</div>
                                     <div className="text-white">
                                         {state.selectedCharacters.length > 0
                                             ? state.selectedCharacters.map(c => c.name).join(', ')
-                                            : 'None selected'}
+                                            : t('noneSelected')}
                                     </div>
-                                    <div className="text-neutral-400">Scenes:</div>
+                                    <div className="text-neutral-400">{t('scenesLabel')}</div>
                                     <div className="text-white">{state.scripts.length}</div>
-                                    <div className="text-neutral-400">Model:</div>
+                                    <div className="text-neutral-400">{t('modelLabel')}</div>
                                     <div className="text-white">Nano Banana Pro</div>
-                                    <div className="text-neutral-400">Preview:</div>
-                                    <div className="text-white">{state.compositeImageUrl ? 'Generated' : 'Not available'}</div>
+                                    <div className="text-neutral-400">{t('previewLabel')}</div>
+                                    <div className="text-white">{state.compositeImageUrl ? t('generated') : t('notAvailable')}</div>
                                 </div>
                             </div>
                         </div>
@@ -787,13 +788,13 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             }`}
                     >
                         <ChevronLeft size={16} />
-                        Back
+                        {t('back')}
                     </button>
 
                     {/* Selected Characters Count - shown in footer for characters step */}
                     {state.step === 'characters' && (
                         <p className="text-xs text-neutral-500">
-                            Selected: {state.selectedCharacters.length}/3 images (optional)
+                            {t('selectedCount')}: {state.selectedCharacters.length}{t('imagesOptional')}
                         </p>
                     )}
 
@@ -803,7 +804,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             onClick={() => onSetStep('story')}
                             className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-violet-600/25 hover:shadow-violet-500/40"
                         >
-                            Next
+                            {t('next')}
                             <ChevronRight size={16} />
                         </button>
                     )}
@@ -820,12 +821,12 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             {state.isGenerating ? (
                                 <>
                                     <Loader2 size={16} className="animate-spin" />
-                                    Generating Scripts...
+                                    {t('generatingPreview')}
                                 </>
                             ) : (
                                 <>
                                     <Sparkles size={16} />
-                                    Generate Scripts
+                                    {t('generateScript')}
                                 </>
                             )}
                         </button>
@@ -849,16 +850,16 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             {state.isGeneratingPreview ? (
                                 <>
                                     <Loader2 size={16} className="animate-spin" />
-                                    Generating...
+                                    {t('generatingPreview')}
                                 </>
                             ) : state.compositeImageUrl ? (
                                 <>
                                     <Sparkles size={16} />
-                                    Regenerate Preview
+                                    {t('regenerateScript')}
                                 </>
                             ) : (
                                 <>
-                                    Next <ChevronRight size={16} />
+                                    {t('next')} <ChevronRight size={16} />
                                 </>
                             )}
                         </button>
@@ -873,7 +874,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                                 : 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-600/25 hover:shadow-violet-500/40'
                                 }`}
                         >
-                            Next <ChevronRight size={16} />
+                            {t('next')} <ChevronRight size={16} />
                         </button>
                     )}
 
@@ -883,7 +884,7 @@ export const StoryboardGeneratorModal: React.FC<StoryboardGeneratorModalProps> =
                             className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-violet-600/25 hover:shadow-violet-500/40"
                         >
                             <Film size={16} />
-                            Create Storyboard
+                            {t('createSceneNodes')}
                         </button>
                     )}
                 </div>

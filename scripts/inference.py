@@ -1,7 +1,7 @@
 """
 inference.py
 
-Local model inference script for TwitCanva.
+Local model inference script for OpenFilm.
 Handles image and video generation using locally installed models.
 
 Usage:
@@ -278,7 +278,7 @@ def generate_with_sdxl(
 
 
 def main():
-    parser = argparse.ArgumentParser(description='TwitCanva Local Model Inference')
+    parser = argparse.ArgumentParser(description='OpenFilm Local Model Inference')
     parser.add_argument('--model_path', required=True, help='Path to the model file')
     parser.add_argument('--prompt', required=True, help='Generation prompt')
     parser.add_argument('--output', required=True, help='Output file path')

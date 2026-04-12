@@ -1,6 +1,6 @@
 # Video Editor Node
 
-The Video Editor node allows you to trim videos directly within the TwitCanva canvas. It provides a timeline-based interface for selecting start and end points, and exports the trimmed video to your library for use in further video generation workflows.
+The Video Editor node allows you to trim videos directly within the OpenFilm canvas. It provides a timeline-based interface for selecting start and end points, and exports the trimmed video to your library for use in further video generation workflows.
 
 ## Features
 

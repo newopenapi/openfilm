@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Trash2, FileText, Loader2, Maximize2, Pencil, Check } from 'lucide-react';
 import { LazyImage } from './LazyImage';
+import { t } from '../i18n';
 
 interface WorkflowSummary {
     id: string;
@@ -204,13 +205,13 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                             onClick={() => setActiveTab('my')}
                             className={`font-medium pb-1 transition-colors ${activeTab === 'my' ? isDark ? 'text-white border-b-2 border-white' : 'text-neutral-900 border-b-2 border-neutral-900' : isDark ? 'text-neutral-500 hover:text-neutral-300' : 'text-neutral-400 hover:text-neutral-600'}`}
                         >
-                            My Workflows
+                            {t('myWorkflows')}
                         </button>
                         <button
                             onClick={() => setActiveTab('public')}
                             className={`font-medium pb-1 transition-colors ${activeTab === 'public' ? isDark ? 'text-white border-b-2 border-white' : 'text-neutral-900 border-b-2 border-neutral-900' : isDark ? 'text-neutral-500 hover:text-neutral-300' : 'text-neutral-400 hover:text-neutral-600'}`}
                         >
-                            Public Workflows
+                            {t('publicWorkflows')}
                         </button>
                     </div>
                     <button
@@ -237,7 +238,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                         /* My Workflows Tab */
                         workflows.length === 0 ? (
                             <div className="flex items-center justify-center h-40 text-neutral-500">
-                                No workflows found
+                                {t('noWorkflowsFound')}
                             </div>
                         ) : (
                             <div className="grid grid-cols-3 gap-4">
@@ -271,7 +272,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                                                 <button
                                                     onClick={(e) => openCoverEditor(workflow.id, e)}
                                                     className="p-1.5 bg-black/50 hover:bg-blue-500 rounded-lg transition-all"
-                                                    title="Edit cover"
+                                                    title={t('editCover')}
                                                 >
                                                     <Pencil size={14} className="text-white" />
                                                 </button>
@@ -282,7 +283,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                                                         setDeleteConfirm(workflow.id);
                                                     }}
                                                     className="p-1.5 bg-black/50 hover:bg-red-500 rounded-lg transition-all"
-                                                    title="Delete workflow"
+                                                    title={t('deleteWorkflow')}
                                                 >
                                                     <Trash2 size={14} className="text-white" />
                                                 </button>
@@ -290,9 +291,9 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                                         </div>
                                         {/* Info */}
                                         <div className={`p-3 ${isDark ? 'bg-neutral-900/50' : 'bg-neutral-100/90'}`}>
-                                            <h3 className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-neutral-900'}`}>{workflow.title || 'Untitled'}</h3>
+                                            <h3 className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-neutral-900'}`}>{workflow.title || t('untitled')}</h3>
                                             <p className={`text-xs mt-0.5 ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
-                                                {workflow.nodeCount} nodes
+                                                {workflow.nodeCount} {t('nodes')}
                                             </p>
                                         </div>
                                     </div>
@@ -304,8 +305,8 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                         publicWorkflows.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-40 text-neutral-500 gap-2">
                                 <FileText size={32} className="opacity-50" />
-                                <p>No public workflows available</p>
-                                <p className="text-xs text-neutral-600">Add workflow JSONs to public/workflows/</p>
+                                <p>{t('noPublicWorkflows')}</p>
+                                <p className="text-xs text-neutral-600">{t('publicWorkflowsHint')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-3 gap-4">
@@ -331,14 +332,14 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                                             )}
                                             {/* Public badge */}
                                             <div className="absolute top-2 left-2 px-2 py-0.5 bg-green-600/80 rounded text-[10px] font-medium text-white">
-                                                PUBLIC
+                                                {t('public')}
                                             </div>
                                         </div>
                                         {/* Info */}
                                         <div className={`p-3 ${isDark ? 'bg-neutral-900/50' : 'bg-neutral-100/90'}`}>
-                                            <h3 className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-neutral-900'}`}>{workflow.title || 'Untitled'}</h3>
+                                            <h3 className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-neutral-900'}`}>{workflow.title || t('untitled')}</h3>
                                             <p className={`text-xs mt-0.5 ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
-                                                {workflow.description || `${workflow.nodeCount} nodes`}
+                                                {workflow.description || `${workflow.nodeCount} ${t('nodes')}`}
                                             </p>
                                         </div>
                                     </div>
@@ -353,22 +354,22 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
             {deleteConfirm && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-[#1a1a1a] border border-neutral-700 rounded-2xl p-6 w-[340px] shadow-2xl">
-                        <h3 className="text-lg font-semibold text-white mb-2">Delete Workflow</h3>
+                        <h3 className="text-lg font-semibold text-white mb-2">{t('deleteWorkflow')}</h3>
                         <p className="text-neutral-400 text-sm mb-6">
-                            Are you sure you want to delete this workflow? This action cannot be undone.
+                            {t('confirmDelete')}
                         </p>
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setDeleteConfirm(null)}
                                 className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-sm transition-colors"
                             >
-                                Cancel
+                                {t('cancel')}
                             </button>
                             <button
                                 onClick={() => handleDelete(deleteConfirm)}
                                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm transition-colors"
                             >
-                                Delete
+                                {t('delete')}
                             </button>
                         </div>
                     </div>
@@ -380,7 +381,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-[#1a1a1a] border border-neutral-700 rounded-2xl p-6 w-[500px] max-h-[500px] shadow-2xl flex flex-col">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-white">Select Cover Image</h3>
+                            <h3 className="text-lg font-semibold text-white">{t('selectCoverImage')}</h3>
                             <button
                                 onClick={() => setEditingCoverFor(null)}
                                 className="p-1.5 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-white transition-colors"
@@ -395,7 +396,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                             </div>
                         ) : coverAssets.length === 0 ? (
                             <div className="flex items-center justify-center h-40 text-neutral-500">
-                                No images available. Generate some images first!
+                                {t('noImagesAvailable')}. {t('generateImagesFirst')}
                             </div>
                         ) : (
                             <div className="grid grid-cols-3 gap-3 overflow-y-auto flex-1">
@@ -425,7 +426,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({
                                         className="col-span-3 flex items-center justify-center py-4"
                                     >
                                         <Loader2 className="animate-spin text-neutral-500" size={20} />
-                                        <span className="ml-2 text-neutral-500 text-sm">Loading more...</span>
+                                        <span className="ml-2 text-neutral-500 text-sm">{t('loadingMore')}</span>
                                     </div>
                                 )}
                             </div>

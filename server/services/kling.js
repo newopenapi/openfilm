@@ -11,7 +11,7 @@ import crypto from 'crypto';
 // CONFIGURATION
 // ============================================================================
 
-const KLING_BASE_URL = 'https://api-singapore.klingai.com';
+const DEFAULT_KLING_BASE_URL = 'https://api-singapore.klingai.com';
 
 // ============================================================================
 // JWT AUTHENTICATION
@@ -110,12 +110,12 @@ function mapKlingImageModelName(modelId) {
 /**
  * Poll Kling video task status until complete
  */
-async function pollKlingVideoTask(taskId, endpoint, token, maxWaitMs = 300000) {
+async function pollKlingVideoTask(taskId, endpoint, token, baseUrl, maxWaitMs = 300000) {
     const startTime = Date.now();
     const pollInterval = 5000; // 5 seconds
 
     while (Date.now() - startTime < maxWaitMs) {
-        const response = await fetch(`${KLING_BASE_URL}/v1/videos/${endpoint}/${taskId}`, {
+        const response = await fetch(`${baseUrl}/v1/videos/${endpoint}/${taskId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -152,7 +152,8 @@ async function pollKlingVideoTask(taskId, endpoint, token, maxWaitMs = 300000) {
 /**
  * Generate video using Kling AI Image-to-Video API
  */
-export async function generateKlingVideo({ prompt, imageBase64, lastFrameBase64, motionReferenceUrl, modelId, aspectRatio, duration, accessKey, secretKey }) {
+export async function generateKlingVideo({ prompt, imageBase64, lastFrameBase64, motionReferenceUrl, modelId, aspectRatio, duration, accessKey, secretKey, baseUrl }) {
+    const base = baseUrl || DEFAULT_KLING_BASE_URL;
     const token = generateKlingJWT(accessKey, secretKey);
     const modelName = mapKlingVideoModelName(modelId);
 
@@ -192,7 +193,7 @@ export async function generateKlingVideo({ prompt, imageBase64, lastFrameBase64,
     console.log(`Kling Video Gen: Using model ${modelName}, mode: ${body.mode}, has image: ${!!imageBase64}, has tail: ${!!lastFrameBase64}, has motion: ${!!motionReferenceUrl}`);
 
     // Create task
-    const response = await fetch(`${KLING_BASE_URL}/v1/videos/image2video`, {
+    const response = await fetch(`${base}/v1/videos/image2video`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -215,7 +216,7 @@ export async function generateKlingVideo({ prompt, imageBase64, lastFrameBase64,
     console.log(`Kling task created: ${taskId}`);
 
     // Poll for completion
-    return await pollKlingVideoTask(taskId, 'image2video', token);
+    return await pollKlingVideoTask(taskId, 'image2video', token, base);
 }
 
 // ============================================================================
@@ -226,13 +227,13 @@ export async function generateKlingVideo({ prompt, imageBase64, lastFrameBase64,
  * Poll for motion extraction task completion
  * Returns the work_id needed for motion-create
  */
-async function pollMotionUploadTask(taskId, token, maxAttempts = 60) {
+async function pollMotionUploadTask(taskId, token, baseUrl, maxAttempts = 60) {
     console.log(`[Motion Control] Polling motion extraction task ${taskId}...`);
 
     for (let i = 0; i < maxAttempts; i++) {
         await new Promise(r => setTimeout(r, 3000)); // 3 second intervals
 
-        const response = await fetch(`${KLING_BASE_URL}/v1/videos/motion/upload/${taskId}`, {
+        const response = await fetch(`${baseUrl}/v1/videos/motion/upload/${taskId}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -267,13 +268,13 @@ async function pollMotionUploadTask(taskId, token, maxAttempts = 60) {
 /**
  * Poll for motion-create video generation task completion
  */
-async function pollMotionCreateTask(taskId, token, maxAttempts = 60) {
+async function pollMotionCreateTask(taskId, token, baseUrl, maxAttempts = 60) {
     console.log(`[Motion Control] Polling motion-create task ${taskId}...`);
 
     for (let i = 0; i < maxAttempts; i++) {
         await new Promise(r => setTimeout(r, 3000));
 
-        const response = await fetch(`${KLING_BASE_URL}/v1/videos/motion/${taskId}`, {
+        const response = await fetch(`${baseUrl}/v1/videos/motion/${taskId}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -317,6 +318,7 @@ async function pollMotionCreateTask(taskId, token, maxAttempts = 60) {
  * @param {number} params.duration - Video duration (5 or 10 seconds)
  * @param {string} params.accessKey - Kling API access key
  * @param {string} params.secretKey - Kling API secret key
+ * @param {string} params.baseUrl - Optional custom API base URL (for proxies)
  * @returns {Promise<string>} URL of the generated video
  */
 export async function generateKlingMotionControl({
@@ -325,8 +327,11 @@ export async function generateKlingMotionControl({
     motionVideoBase64,
     duration = 5,
     accessKey,
-    secretKey
+    secretKey,
+    baseUrl
 }) {
+    const base = baseUrl || DEFAULT_KLING_BASE_URL;
+    
     console.log('\n========================================');
     console.log('[Motion Control] Starting two-step motion control workflow');
     console.log(`[Motion Control] Parameters:`);
@@ -354,9 +359,9 @@ export async function generateKlingMotionControl({
         video: extractRawBase64(motionVideoBase64)
     };
 
-    console.log(`[Motion Control] Sending motion-upload request to ${KLING_BASE_URL}/v1/videos/motion/upload`);
+    console.log(`[Motion Control] Sending motion-upload request to ${base}/v1/videos/motion/upload`);
 
-    const uploadResponse = await fetch(`${KLING_BASE_URL}/v1/videos/motion/upload`, {
+    const uploadResponse = await fetch(`${base}/v1/videos/motion/upload`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -383,7 +388,7 @@ export async function generateKlingMotionControl({
     console.log(`[Motion Control] Motion upload task created: ${uploadTaskId}`);
 
     // Poll for motion extraction completion
-    const workId = await pollMotionUploadTask(uploadTaskId, token);
+    const workId = await pollMotionUploadTask(uploadTaskId, token, base);
 
     // ========================================
     // STEP 2: Create video using extracted motion + character image
@@ -403,9 +408,9 @@ export async function generateKlingMotionControl({
     console.log(`  - prompt: ${createBody.prompt.substring(0, 50) || '(none)'}`);
     console.log(`  - duration: ${createBody.duration}s`);
     console.log(`  - mode: ${createBody.mode}`);
-    console.log(`[Motion Control] Sending motion-create request to ${KLING_BASE_URL}/v1/videos/motion`);
+    console.log(`[Motion Control] Sending motion-create request to ${base}/v1/videos/motion`);
 
-    const createResponse = await fetch(`${KLING_BASE_URL}/v1/videos/motion`, {
+    const createResponse = await fetch(`${base}/v1/videos/motion`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -432,7 +437,7 @@ export async function generateKlingMotionControl({
     console.log(`[Motion Control] Motion-create task created: ${createTaskId}`);
 
     // Poll for video generation completion
-    const videoUrl = await pollMotionCreateTask(createTaskId, token);
+    const videoUrl = await pollMotionCreateTask(createTaskId, token, base);
 
     console.log('\n========================================');
     console.log('[Motion Control] SUCCESS! Video generated.');
@@ -445,7 +450,8 @@ export async function generateKlingMotionControl({
 /**
  * Generate video using Kling AI Multi-Image-to-Video API (for frame-to-frame)
  */
-export async function generateKlingMultiImageVideo({ prompt, imageList, aspectRatio, accessKey, secretKey }) {
+export async function generateKlingMultiImageVideo({ prompt, imageList, aspectRatio, accessKey, secretKey, baseUrl }) {
+    const base = baseUrl || DEFAULT_KLING_BASE_URL;
     const token = generateKlingJWT(accessKey, secretKey);
 
     // Multi-image only supports kling-v1-6
@@ -460,7 +466,7 @@ export async function generateKlingMultiImageVideo({ prompt, imageList, aspectRa
 
     console.log(`Kling Multi-Image Gen: ${imageList.length} images`);
 
-    const response = await fetch(`${KLING_BASE_URL}/v1/videos/multi-image2video`, {
+    const response = await fetch(`${base}/v1/videos/multi-image2video`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -483,7 +489,7 @@ export async function generateKlingMultiImageVideo({ prompt, imageList, aspectRa
     console.log(`Kling multi-image task created: ${taskId}`);
 
     // Poll for completion
-    return await pollKlingVideoTask(taskId, 'multi-image2video', token);
+    return await pollKlingVideoTask(taskId, 'multi-image2video', token, base);
 }
 
 // ============================================================================
@@ -493,12 +499,12 @@ export async function generateKlingMultiImageVideo({ prompt, imageList, aspectRa
 /**
  * Poll Kling image task status until complete
  */
-async function pollKlingImageTask(taskId, token, maxWaitMs = 120000) {
+async function pollKlingImageTask(taskId, token, baseUrl, maxWaitMs = 120000) {
     const startTime = Date.now();
     const pollInterval = 3000; // 3 seconds for images
 
     while (Date.now() - startTime < maxWaitMs) {
-        const response = await fetch(`${KLING_BASE_URL}/v1/images/generations/${taskId}`, {
+        const response = await fetch(`${baseUrl}/v1/images/generations/${taskId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -535,12 +541,12 @@ async function pollKlingImageTask(taskId, token, maxWaitMs = 120000) {
 /**
  * Poll Kling multi-image-to-image task status until complete
  */
-async function pollKlingMultiImageTask(taskId, token, maxWaitMs = 120000) {
+async function pollKlingMultiImageTask(taskId, token, baseUrl, maxWaitMs = 120000) {
     const startTime = Date.now();
     const pollInterval = 3000; // 3 seconds for images
 
     while (Date.now() - startTime < maxWaitMs) {
-        const response = await fetch(`${KLING_BASE_URL}/v1/images/multi-image2image/${taskId}`, {
+        const response = await fetch(`${baseUrl}/v1/images/multi-image2image/${taskId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -584,6 +590,7 @@ async function pollKlingMultiImageTask(taskId, token, maxWaitMs = 120000) {
  * @param styleImage - Optional style reference image (base64)
  * @param modelId - Model ID (kling-v2 or kling-v2-1)
  * @param aspectRatio - Output aspect ratio
+ * @param baseUrl - Optional custom API base URL (for proxies)
  */
 export async function generateKlingMultiImage({
     prompt,
@@ -594,8 +601,10 @@ export async function generateKlingMultiImage({
     aspectRatio,
     resolution,
     accessKey,
-    secretKey
+    secretKey,
+    baseUrl
 }) {
+    const base = baseUrl || DEFAULT_KLING_BASE_URL;
     const token = generateKlingJWT(accessKey, secretKey);
 
     // Multi-image-to-image only supports kling-v2 and kling-v2-1
@@ -651,7 +660,7 @@ export async function generateKlingMultiImage({
     console.log(`Kling Multi-Image Gen: Using model ${modelName}, ${subjectImages.length} subjects, ratio: ${mappedRatio}`);
 
     // Create task
-    const response = await fetch(`${KLING_BASE_URL}/v1/images/multi-image2image`, {
+    const response = await fetch(`${base}/v1/images/multi-image2image`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -674,13 +683,14 @@ export async function generateKlingMultiImage({
     console.log(`Kling multi-image task created: ${taskId}`);
 
     // Poll for completion
-    return await pollKlingMultiImageTask(taskId, token);
+    return await pollKlingMultiImageTask(taskId, token, base);
 }
 
 /**
  * Generate image using Kling AI Image Generation API
  */
-export async function generateKlingImage({ prompt, imageBase64, modelId, aspectRatio, resolution, klingReferenceMode, klingFaceIntensity, klingSubjectIntensity, accessKey, secretKey }) {
+export async function generateKlingImage({ prompt, imageBase64, modelId, aspectRatio, resolution, klingReferenceMode, klingFaceIntensity, klingSubjectIntensity, accessKey, secretKey, baseUrl }) {
+    const base = baseUrl || DEFAULT_KLING_BASE_URL;
     const token = generateKlingJWT(accessKey, secretKey);
     const modelName = mapKlingImageModelName(modelId);
 
@@ -747,7 +757,7 @@ export async function generateKlingImage({ prompt, imageBase64, modelId, aspectR
     console.log(`Kling Image Gen: Using model ${modelName}, aspect ratio: ${mappedRatio}, has reference: ${!!imageBase64}`);
 
     // Create task
-    const response = await fetch(`${KLING_BASE_URL}/v1/images/generations`, {
+    const response = await fetch(`${base}/v1/images/generations`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -770,5 +780,5 @@ export async function generateKlingImage({ prompt, imageBase64, modelId, aspectR
     console.log(`Kling image task created: ${taskId}`);
 
     // Poll for completion
-    return await pollKlingImageTask(taskId, token);
+    return await pollKlingImageTask(taskId, token, base);
 }

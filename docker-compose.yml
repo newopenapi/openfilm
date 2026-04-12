@@ -3,8 +3,8 @@ version: '3.8'
 services:
   twitcanva:
     build: .
-    image: twitcanva:latest
-    container_name: twitcanva-app
+    image: openfilm:latest
+    container_name: openfilm-app
     ports:
       - "3001:3001"
     volumes:

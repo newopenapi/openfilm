@@ -66,10 +66,14 @@ const getClient = () => {
 
 const KLING_ACCESS_KEY = process.env.KLING_ACCESS_KEY;
 const KLING_SECRET_KEY = process.env.KLING_SECRET_KEY;
-const KLING_BASE_URL = 'https://api-singapore.klingai.com';
+const KLING_BASE_URL = process.env.KLING_BASE_URL || 'https://api-singapore.klingai.com';
 
 if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
     console.warn("SERVER WARNING: KLING_ACCESS_KEY or KLING_SECRET_KEY not set. Kling AI models will not work.");
+}
+
+if (process.env.KLING_BASE_URL) {
+    console.log(`[Kling] Using custom base URL: ${KLING_BASE_URL}`);
 }
 
 // ============================================================================
@@ -77,9 +81,14 @@ if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
 // ============================================================================
 
 const HAILUO_API_KEY = process.env.HAILUO_API_KEY;
+const HAILUO_BASE_URL = process.env.HAILUO_BASE_URL || 'https://api.minimax.io/v1';
 
 if (!HAILUO_API_KEY) {
     console.warn("SERVER WARNING: HAILUO_API_KEY not set. Hailuo AI models will not work.");
+}
+
+if (process.env.HAILUO_BASE_URL) {
+    console.log(`[Hailuo] Using custom base URL: ${HAILUO_BASE_URL}`);
 }
 
 // ============================================================================
@@ -87,9 +96,14 @@ if (!HAILUO_API_KEY) {
 // ============================================================================
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 
 if (!OPENAI_API_KEY) {
     console.warn("SERVER WARNING: OPENAI_API_KEY not set. OpenAI GPT Image models will not work.");
+}
+
+if (process.env.OPENAI_BASE_URL) {
+    console.log(`[OpenAI] Using custom base URL: ${OPENAI_BASE_URL}`);
 }
 
 // ============================================================================
@@ -97,18 +111,61 @@ if (!OPENAI_API_KEY) {
 // ============================================================================
 
 const FAL_API_KEY = process.env.FAL_API_KEY;
+const FAL_BASE_URL = process.env.FAL_BASE_URL || 'https://queue.fal.run';
 
 if (!FAL_API_KEY) {
     console.warn("SERVER WARNING: FAL_API_KEY not set. Kling 2.6 Motion Control will not work.");
+}
+
+if (process.env.FAL_BASE_URL) {
+    console.log(`[Fal.ai] Using custom base URL: ${FAL_BASE_URL}`);
+}
+
+// ============================================================================
+// VOLCANO ENGINE (火山方舟) CONFIGURATION
+// ============================================================================
+
+const VOLCANO_API_KEY = process.env.VOLCANO_API_KEY;
+const VOLCANO_BASE_URL = process.env.VOLCANO_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3';
+
+if (!VOLCANO_API_KEY) {
+    console.warn("SERVER WARNING: VOLCANO_API_KEY not set. Volcano/Seedance models will not work.");
+}
+
+// ============================================================================
+// NANOBANANA (GEMINI IMAGE)
+// ============================================================================
+
+const NANOBANANA_API_KEY = process.env.NANOBANANA_API_KEY;
+const NANOBANANA_BASE_URL = process.env.NANOBANANA_BASE_URL || 'https://open.bsv.vip';
+
+if (!NANOBANANA_API_KEY) {
+    console.warn("SERVER WARNING: NANOBANANA_API_KEY not set. NanoBanana (Gemini) image models will not work.");
+} else {
+    // Mask API key for logging (show first 8 and last 4 chars)
+    const maskedKey = NANOBANANA_API_KEY.substring(0, 8) + '...' + NANOBANANA_API_KEY.slice(-4);
+    console.log(`[NanoBanana] API Key loaded: ${maskedKey}`);
+}
+
+if (process.env.VOLCANO_BASE_URL) {
+    console.log(`[Volcano] Using custom base URL: ${VOLCANO_BASE_URL}`);
 }
 
 // Set up app.locals for sharing config with route modules
 app.locals.GEMINI_API_KEY = API_KEY;
 app.locals.KLING_ACCESS_KEY = KLING_ACCESS_KEY;
 app.locals.KLING_SECRET_KEY = KLING_SECRET_KEY;
+app.locals.KLING_BASE_URL = KLING_BASE_URL;
 app.locals.HAILUO_API_KEY = HAILUO_API_KEY;
+app.locals.HAILUO_BASE_URL = HAILUO_BASE_URL;
 app.locals.OPENAI_API_KEY = OPENAI_API_KEY;
+app.locals.OPENAI_BASE_URL = OPENAI_BASE_URL;
 app.locals.FAL_API_KEY = FAL_API_KEY;
+app.locals.FAL_BASE_URL = FAL_BASE_URL;
+app.locals.VOLCANO_API_KEY = VOLCANO_API_KEY;
+app.locals.VOLCANO_BASE_URL = VOLCANO_BASE_URL;
+app.locals.NANOBANANA_API_KEY = NANOBANANA_API_KEY;
+app.locals.NANOBANANA_BASE_URL = NANOBANANA_BASE_URL;
 app.locals.IMAGES_DIR = IMAGES_DIR;
 app.locals.VIDEOS_DIR = VIDEOS_DIR;
 app.locals.LIBRARY_DIR = LIBRARY_DIR;

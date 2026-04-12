@@ -11,6 +11,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, History, Paperclip, Globe, Settings, Send, Sparkles, Plus, Loader2, ChevronLeft, Trash2, MessageSquare } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { useChatAgent, ChatMessage as ChatMessageType, ChatSession } from '../hooks/useChatAgent';
+import { t } from '../i18n';
 
 // ============================================================================
 // TYPES
@@ -209,9 +210,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         if (diffDays === 0) {
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         } else if (diffDays === 1) {
-            return 'Yesterday';
+            return t('yesterday');
         } else if (diffDays < 7) {
-            return `${diffDays} days ago`;
+            return `${diffDays} ${t('daysAgo')}`;
         } else {
             return date.toLocaleDateString();
         }
@@ -236,7 +237,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 <div className="absolute inset-0 bg-cyan-500/10 pointer-events-none z-10 flex items-center justify-center">
                     <div className="bg-cyan-500/20 border-2 border-dashed border-cyan-400 rounded-2xl px-8 py-6 text-center">
                         <Sparkles className="w-10 h-10 mx-auto mb-2 text-cyan-400" />
-                        <p className="text-cyan-300 font-medium">Drop image/video here</p>
+                        <p className="text-cyan-300 font-medium">{t('dropMediaHint')}</p>
                     </div>
                 </div>
             )}
@@ -252,7 +253,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         >
                             <ChevronLeft size={18} />
                         </button>
-                        <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-neutral-900'}`}>Chat History</span>
+                        <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-neutral-900'}`}>{t('chatHistory')}</span>
                     </div>
 
                     {/* History List */}
@@ -264,8 +265,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         ) : sessions.length === 0 ? (
                             <div className="text-center py-8">
                                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-neutral-600" />
-                                <p className="text-neutral-500 text-sm">No chat history yet</p>
-                                <p className="text-neutral-600 text-xs mt-1">Start a conversation to see it here</p>
+                                <p className="text-neutral-500 text-sm">{t('noChatHistory')}</p>
+                                <p className="text-neutral-600 text-xs mt-1">{t('startConversationHint')}</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
@@ -307,7 +308,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                             className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 rounded-xl text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
                         >
                             <Plus size={16} />
-                            New Chat
+                            {t('newChat')}
                         </button>
                     </div>
                 </div>
@@ -319,7 +320,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                 <div className="flex items-center gap-3">
                     {/* Topic or default title */}
                     <span className={`font-medium text-sm truncate max-w-[180px] ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-                        {topic || (hasMessages ? 'New Chat' : 'ImageIdeas')}
+                        {topic || (hasMessages ? t('newChat') : t('imageIdeas'))}
                     </span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -328,7 +329,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         <button
                             onClick={handleNewChat}
                             className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-400 hover:text-white' : 'hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900'}`}
-                            title="New Chat"
+                            title={t('newChat')}
                         >
                             <Plus size={18} />
                         </button>
@@ -336,7 +337,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     <button
                         onClick={() => setShowHistory(true)}
                         className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-400 hover:text-white' : 'hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900'}`}
-                        title="Chat History"
+                        title={t('chatHistory')}
                     >
                         <History size={18} />
                     </button>
@@ -356,10 +357,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                     <>
                         {/* Greeting */}
                         <h1 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-neutral-900'}`}>
-                            Hi, {userName}
+                            {t('greeting')} {userName}
                         </h1>
                         <p className="text-cyan-400 text-lg mb-6">
-                            Looking for inspiration?
+                            {t('lookingForInspiration')}
                         </p>
 
                         {/* Tip Card */}
@@ -380,7 +381,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                                         onClick={() => setShowTip(false)}
                                         className={`px-4 py-1.5 rounded-lg text-sm transition-colors ${isDark ? 'bg-neutral-700 hover:bg-neutral-600 text-white' : 'bg-neutral-200 hover:bg-neutral-300 text-neutral-900'}`}
                                     >
-                                        Got it
+                                        {t('gotIt')}
                                     </button>
                                 </div>
                             </div>
@@ -457,7 +458,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
                         ref={textareaRef}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Start your journey of inspiration"
+                        placeholder={t('startInspiration')}
                         className={`w-full bg-transparent text-sm outline-none mb-3 resize-none min-h-[24px] max-h-[120px] ${isDark ? 'text-white placeholder:text-neutral-500' : 'text-neutral-900 placeholder:text-neutral-400'}`}
                         rows={1}
                         style={{ scrollbarWidth: 'none' }}

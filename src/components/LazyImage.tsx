@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
+import { t } from '../i18n';
 
 interface LazyImageProps {
     src: string;
@@ -78,7 +79,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
             {/* Error state */}
             {hasError && (
                 <div className="absolute inset-0 bg-neutral-800 flex items-center justify-center">
-                    <span className="text-neutral-500 text-xs">Failed to load</span>
+                    <span className="text-neutral-500 text-xs">{t('failedToLoad')}</span>
                 </div>
             )}
 

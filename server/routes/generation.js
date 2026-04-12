@@ -12,6 +12,8 @@ import { generateKlingVideo, generateKlingImage, generateKlingMultiImage } from 
 import { generateGeminiImage, generateVeoVideo } from '../services/gemini.js';
 import { generateHailuoVideo } from '../services/hailuo.js';
 import { generateOpenAIImage } from '../services/openai.js';
+import { generateVolcanoVideo } from '../services/volcano.js';
+import { generateNanoBananaImage } from '../services/nanobanana.js';
 import { resolveImageToBase64, saveBufferToFile } from '../utils/imageHelpers.js';
 
 const router = express.Router();
@@ -23,11 +25,12 @@ const router = express.Router();
 router.post('/generate-image', async (req, res) => {
     try {
         const { nodeId, prompt, aspectRatio, resolution, imageBase64: rawImageBase64, imageModel, klingReferenceMode, klingFaceIntensity, klingSubjectIntensity } = req.body;
-        const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, OPENAI_API_KEY, IMAGES_DIR } = req.app.locals;
+        const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, OPENAI_API_KEY, OPENAI_BASE_URL, NANOBANANA_API_KEY, NANOBANANA_BASE_URL, IMAGES_DIR } = req.app.locals;
 
         // Determine provider
         const isKlingModel = imageModel && imageModel.startsWith('kling-');
         const isOpenAIModel = imageModel && imageModel.startsWith('gpt-image-');
+        const isNanoBananaModel = imageModel && (imageModel.startsWith('gemini-2.5-flash-image') || imageModel.startsWith('gemini-3-pro-image') || imageModel.startsWith('gemini-3.1-flash-image'));
 
         let imageBuffer;
         let imageFormat = 'png';
@@ -130,8 +133,47 @@ router.post('/generate-image', async (req, res) => {
                 imageBase64Array,
                 aspectRatio,
                 resolution,
-                apiKey: OPENAI_API_KEY
+                apiKey: OPENAI_API_KEY,
+                baseUrl: OPENAI_BASE_URL
             });
+
+        } else if (isNanoBananaModel) {
+            // --- NANOBANANA (GEMINI) IMAGE GENERATION ---
+            if (!NANOBANANA_API_KEY) {
+                return res.status(500).json({
+                    error: "NanoBanana API key not configured. Add NANOBANANA_API_KEY to .env"
+                });
+            }
+
+            console.log(`Using NanoBanana (Gemini) model: ${imageModel}`);
+
+            // Resolve images if provided
+            let imageBase64ArrayNb = null;
+            if (rawImageBase64) {
+                const rawImages = Array.isArray(rawImageBase64) ? rawImageBase64 : [rawImageBase64];
+                imageBase64ArrayNb = rawImages.map(img => resolveImageToBase64(img)).filter(Boolean);
+            }
+
+            const nanobananaResult = await generateNanoBananaImage({
+                prompt,
+                imageBase64Array: imageBase64ArrayNb,
+                modelId: imageModel,
+                aspectRatio,
+                resolution,
+                apiKey: NANOBANANA_API_KEY,
+                baseUrl: NANOBANANA_BASE_URL
+            });
+
+            // nanobanana returns data URL, convert to buffer
+            if (nanobananaResult.startsWith('data:')) {
+                const base64Match = nanobananaResult.match(/^data:image\/\w+;base64,(.+)$/);
+                imageBuffer = Buffer.from(base64Match[1], 'base64');
+                if (nanobananaResult.includes('image/jpeg')) {
+                    imageFormat = 'jpg';
+                }
+            } else {
+                imageBuffer = Buffer.from(nanobananaResult, 'base64');
+            }
 
         } else {
             // --- GEMINI IMAGE GENERATION (Default) ---
@@ -187,7 +229,7 @@ router.post('/generate-image', async (req, res) => {
 router.post('/generate-video', async (req, res) => {
     try {
         const { nodeId, prompt, imageBase64: rawImageBase64, lastFrameBase64: rawLastFrameBase64, motionReferenceUrl: rawMotionReferenceUrl, aspectRatio, resolution, duration, videoModel } = req.body;
-        const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, HAILUO_API_KEY, VIDEOS_DIR } = req.app.locals;
+        const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, HAILUO_API_KEY, HAILUO_BASE_URL, FAL_API_KEY, FAL_BASE_URL, VOLCANO_API_KEY, VOLCANO_BASE_URL, VIDEOS_DIR } = req.app.locals;
 
         // Resolve file URLs to base64
         const imageBase64 = resolveImageToBase64(rawImageBase64);
@@ -197,10 +239,40 @@ router.post('/generate-video', async (req, res) => {
         // Determine provider
         const isKlingModel = videoModel && videoModel.startsWith('kling-');
         const isHailuoModel = videoModel && videoModel.startsWith('hailuo-');
+        const isVolcanoModel = videoModel && videoModel.startsWith('seedance-');
 
         let videoBuffer;
 
-        if (isKlingModel) {
+        if (isVolcanoModel) {
+            // --- VOLCANO ENGINE (SEEDANCE) VIDEO GENERATION ---
+            if (!VOLCANO_API_KEY) {
+                return res.status(500).json({
+                    error: "Volcano API key not configured. Add VOLCANO_API_KEY to .env"
+                });
+            }
+
+            console.log(`Using Volcano/Seedance model: ${videoModel}, duration: ${duration || 5}s`);
+
+            const volcanoVideoUrl = await generateVolcanoVideo({
+                prompt,
+                imageBase64,
+                lastFrameBase64,
+                modelId: videoModel,
+                aspectRatio,
+                resolution,
+                duration: duration || 5,
+                apiKey: VOLCANO_API_KEY,
+                baseUrl: VOLCANO_BASE_URL
+            });
+
+            // Download from Volcano's URL
+            const videoResponse = await fetch(volcanoVideoUrl);
+            if (!videoResponse.ok) {
+                throw new Error('Failed to download video from Volcano');
+            }
+            videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+
+        } else if (isKlingModel) {
             // --- KLING AI VIDEO GENERATION ---
 
             // Check if this is a Kling 2.6 model (route to Fal.ai - official API doesn't support v2.6)
@@ -213,7 +285,6 @@ router.post('/generate-video', async (req, res) => {
             if (isKling26) {
                 // --- KLING 2.6 VIA FAL.AI ---
                 // Official Kling API doesn't support v2.6, use fal.ai instead
-                const { FAL_API_KEY } = req.app.locals;
 
                 if (!FAL_API_KEY) {
                     return res.status(500).json({
@@ -235,7 +306,8 @@ router.post('/generate-video', async (req, res) => {
                         characterImageBase64: imageBase64,
                         motionVideoBase64: motionReferenceUrl,
                         characterOrientation: 'video',
-                        apiKey: FAL_API_KEY
+                        apiKey: FAL_API_KEY,
+                        baseUrl: FAL_BASE_URL
                     });
                 } else {
                     // Standard Image-to-Video mode
@@ -251,7 +323,8 @@ router.post('/generate-video', async (req, res) => {
                         imageBase64,
                         duration: String(duration || 5),
                         generateAudio: req.body.generateAudio !== false, // Default to true
-                        apiKey: FAL_API_KEY
+                        apiKey: FAL_API_KEY,
+                        baseUrl: FAL_BASE_URL
                     });
                 }
             } else {
@@ -273,7 +346,8 @@ router.post('/generate-video', async (req, res) => {
                     duration: duration || 5,
                     motionReferenceUrl,
                     accessKey: KLING_ACCESS_KEY,
-                    secretKey: KLING_SECRET_KEY
+                    secretKey: KLING_SECRET_KEY,
+                    baseUrl: KLING_BASE_URL
                 });
             }
 
@@ -302,7 +376,8 @@ router.post('/generate-video', async (req, res) => {
                 aspectRatio,
                 resolution,
                 duration: duration || 6,
-                apiKey: HAILUO_API_KEY
+                apiKey: HAILUO_API_KEY,
+                baseUrl: HAILUO_BASE_URL
             });
 
             // Download from Hailuo's URL

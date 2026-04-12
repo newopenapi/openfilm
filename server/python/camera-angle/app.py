@@ -38,7 +38,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS - allow requests from TwitCanva frontend
+# CORS - allow requests from OpenFilm frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, restrict to specific origins

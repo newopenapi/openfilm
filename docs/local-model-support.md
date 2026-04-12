@@ -1,12 +1,12 @@
-# Local Open-Source Model Support for TwitCanva
+# Local Open-Source Model Support for OpenFilm
 
-Enable users to download open-source AI models and use them in the TwitCanva canvas workflow with a simple, guided UI—no ComfyUI complexity needed.
+Enable users to download open-source AI models and use them in the OpenFilm canvas workflow with a simple, guided UI—no ComfyUI complexity needed.
 
 ---
 
 ## Design Philosophy
 
-| Approach | TwitCanva | ComfyUI |
+| Approach | OpenFilm | ComfyUI |
 |----------|-----------|---------|
 | **UI** | Simple, guided | Node-based, flexible |
 | **Workflows** | Prebuilt, invisible to users | User builds manually |
@@ -35,7 +35,7 @@ Step 5: Click Generate → Image appears
 
 ### Prebuilt Workflow System
 
-Instead of exposing nodes to users, TwitCanva maintains internal workflows for each model architecture:
+Instead of exposing nodes to users, OpenFilm maintains internal workflows for each model architecture:
 
 ```
 User Action                    What App Does Internally

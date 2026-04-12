@@ -8,7 +8,7 @@ This document describes how to deploy and integrate the Qwen Camera Angle Contro
 
 ```
 ┌─────────────────────┐        HTTPS         ┌─────────────────────────┐
-│   TwitCanva App     │  ─────────────────▶  │   Modal Serverless      │
+│   OpenFilm App      │  ─────────────────▶  │   Modal Serverless      │
 │   (Frontend)        │                      │   (A100 GPU, 40GB VRAM) │
 └─────────────────────┘                      └───────────┬─────────────┘
                                                          │

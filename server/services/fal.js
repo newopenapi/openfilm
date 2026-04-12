@@ -157,6 +157,7 @@ async function base64ToBlob(base64Data, fileType = 'image') {
  * @param {string} params.characterOrientation - 'image' or 'video' (default: 'video')
  * @param {boolean} params.keepOriginalSound - Keep audio from reference video (default: true per API)
  * @param {string} params.apiKey - Fal.ai API key
+ * @param {string} [params.baseUrl] - Optional custom API base URL (for proxies)
  * @returns {Promise<string>} URL of the generated video
  */
 export async function generateFalMotionControl({
@@ -165,7 +166,8 @@ export async function generateFalMotionControl({
     motionVideoBase64,
     characterOrientation = 'video',
     keepOriginalSound = true, // Match API default
-    apiKey
+    apiKey,
+    baseUrl
 }) {
     console.log('\n========================================');
     console.log('[Fal.ai Motion Control] Starting generation');
@@ -175,6 +177,7 @@ export async function generateFalMotionControl({
     console.log(`  - Motion Video: ${motionVideoBase64 ? 'YES' : 'NO'}`);
     console.log(`  - Character Orientation: ${characterOrientation}`);
     console.log(`  - Keep Original Sound: ${keepOriginalSound}`);
+    console.log(`  - Custom Base URL: ${baseUrl || 'Official (queue.fal.run)'}`);
     console.log('========================================\n');
 
     if (!apiKey) {
@@ -187,10 +190,12 @@ export async function generateFalMotionControl({
         throw new Error('[Fal.ai Motion Control] Motion reference video is required');
     }
 
-    // Configure fal client with API key
-    fal.config({
-        credentials: apiKey
-    });
+    // Configure fal client with API key and optional custom base URL
+    const falConfig = { credentials: apiKey };
+    if (baseUrl) {
+        falConfig.baseUrl = baseUrl;
+    }
+    fal.config(falConfig);
 
     // Upload files to fal.ai storage (with compression for large images)
     console.log('[Fal.ai Motion Control] Processing and uploading files to fal.ai storage...');
@@ -287,6 +292,7 @@ export async function generateFalMotionControl({
  * @param {string} params.duration - Video duration: "5" or "10" (default: "5")
  * @param {boolean} params.generateAudio - Whether to generate native audio (default: true)
  * @param {string} params.apiKey - Fal.ai API key
+ * @param {string} [params.baseUrl] - Optional custom API base URL (for proxies)
  * @returns {Promise<string>} URL of the generated video
  */
 export async function generateFalImageToVideo({
@@ -294,7 +300,8 @@ export async function generateFalImageToVideo({
     imageBase64,
     duration = '5',
     generateAudio = true,
-    apiKey
+    apiKey,
+    baseUrl
 }) {
     console.log('\n========================================');
     console.log('[Fal.ai Image-to-Video] Starting Kling 2.6 generation');
@@ -303,6 +310,7 @@ export async function generateFalImageToVideo({
     console.log(`  - Image: ${imageBase64 ? 'YES' : 'NO'}`);
     console.log(`  - Duration: ${duration}s`);
     console.log(`  - Generate Audio: ${generateAudio}`);
+    console.log(`  - Custom Base URL: ${baseUrl || 'Official (queue.fal.run)'}`);
     console.log('========================================\n');
 
     if (!apiKey) {
@@ -312,10 +320,12 @@ export async function generateFalImageToVideo({
         throw new Error('[Fal.ai Image-to-Video] Image is required');
     }
 
-    // Configure fal client with API key
-    fal.config({
-        credentials: apiKey
-    });
+    // Configure fal client with API key and optional custom base URL
+    const falConfig = { credentials: apiKey };
+    if (baseUrl) {
+        falConfig.baseUrl = baseUrl;
+    }
+    fal.config(falConfig);
 
     // Upload image to fal.ai storage (with compression for large images)
     console.log('[Fal.ai Image-to-Video] Processing and uploading image...');

@@ -1,6 +1,6 @@
 {
-    "name": "TwitCanva",
-    "short_name": "TwitCanva",
+  "name": "OpenFilm",
+  "short_name": "OpenFilm",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",

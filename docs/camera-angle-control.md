@@ -19,7 +19,7 @@ Enable camera angle manipulation for generated images using the Qwen Image Edit 
 
 ```
 ┌─────────────────┐    HTTP     ┌─────────────────────┐
-│   TwitCanva     │ ─────────▶ │   FastAPI Server    │
+│   OpenFilm      │ ─────────▶ │   FastAPI Server    │
 │   Frontend      │  :8100     │   (camera-angle)    │
 └─────────────────┘            └──────────┬──────────┘
          │                                │

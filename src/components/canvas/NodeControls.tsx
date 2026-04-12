@@ -9,10 +9,11 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { Sparkles, Banana, Settings2, Check, ChevronDown, ChevronUp, GripVertical, Image as ImageIcon, Film, Clock, Expand, Shrink, Monitor, Crop, HardDrive } from 'lucide-react';
 import { NodeData, NodeStatus, NodeType } from '../../types';
-import { OpenAIIcon, GoogleIcon, KlingIcon, HailuoIcon } from '../icons/BrandIcons';
+import { OpenAIIcon, GoogleIcon, KlingIcon, HailuoIcon, VolcanoIcon } from '../icons/BrandIcons';
 import { useFaceDetection } from '../../hooks/useFaceDetection';
 import { ChangeAnglePanel } from './ChangeAnglePanel';
 import { LocalModel, getLocalModels } from '../../services/localModelService';
+import { t } from '../../i18n';
 
 interface NodeControlsProps {
     data: NodeData;
@@ -59,6 +60,12 @@ const VIDEO_MODELS = [
     { id: 'hailuo-2.3', name: 'Hailuo 2.3', provider: 'hailuo', supportsTextToVideo: true, supportsImageToVideo: true, supportsMultiImage: true, durations: [5], resolutions: ['768p', '1080p'], aspectRatios: ['16:9', '9:16'] },
     { id: 'hailuo-2.3-fast', name: 'Hailuo 2.3 Fast', provider: 'hailuo', supportsTextToVideo: false, supportsImageToVideo: true, supportsMultiImage: false, durations: [5], resolutions: ['768p', '1080p'], aspectRatios: ['16:9', '9:16'] },
     { id: 'hailuo-02', name: 'Hailuo 02', provider: 'hailuo', supportsTextToVideo: true, supportsImageToVideo: true, supportsMultiImage: true, durations: [5], resolutions: ['768p', '1080p'], aspectRatios: ['16:9', '9:16'] },
+    // Volcano Engine (Seedance) models - ByteDance
+    { id: 'seedance-2.0', name: 'Seedance 2.0', provider: 'volcano', supportsTextToVideo: true, supportsImageToVideo: true, supportsMultiImage: true, durations: [5, 10, 15], resolutions: ['720p', '1080p'], aspectRatios: ['16:9', '9:16', '4:3', '3:4', '1:1', '21:9'] },
+    { id: 'seedance-2.0-fast', name: 'Seedance 2.0 Fast', provider: 'volcano', supportsTextToVideo: true, supportsImageToVideo: true, supportsMultiImage: false, durations: [5, 10], resolutions: ['720p', '1080p'], aspectRatios: ['16:9', '9:16'] },
+    { id: 'seedance-1.5-pro', name: 'Seedance 1.5 Pro', provider: 'volcano', supportsTextToVideo: true, supportsImageToVideo: true, supportsMultiImage: true, durations: [5, 10], resolutions: ['720p', '1080p'], aspectRatios: ['16:9', '9:16'] },
+    { id: 'seedance-1.0-pro', name: 'Seedance 1.0 Pro', provider: 'volcano', supportsTextToVideo: true, supportsImageToVideo: true, supportsMultiImage: true, durations: [5, 10], resolutions: ['720p', '1080p'], aspectRatios: ['16:9', '9:16'] },
+    { id: 'seedance-1.0-lite', name: 'Seedance 1.0 Lite', provider: 'volcano', supportsTextToVideo: true, supportsImageToVideo: true, supportsMultiImage: false, durations: [5], resolutions: ['480p', '720p'], aspectRatios: ['16:9', '9:16'] },
 ];
 
 // Image model versions with metadata
@@ -80,14 +87,33 @@ const IMAGE_MODELS = [
         // OpenAI uses exact pixel sizes, not aspect ratios
         aspectRatios: ["Auto", "1024x1024", "1536x1024", "1024x1536"]
     },
+    // NanoBanana / Gemini models via bsv.vip
     {
-        id: 'gemini-pro',
-        name: 'Nano Banana Pro',
-        provider: 'google',
+        id: 'gemini-2.5-flash-image',
+        name: 'Gemini 2.5 Flash',
+        provider: 'nanobanana',
         supportsImageToImage: true,
-        supportsMultiImage: true,
-        resolutions: ["1K", "2K", "4K"],
-        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "3:4", "4:3", "3:2", "2:3", "5:4", "4:5", "21:9"]
+        supportsMultiImage: false,
+        resolutions: ["1K", "2K"],
+        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "4:3", "3:4"]
+    },
+    {
+        id: 'gemini-3-pro-image-preview',
+        name: 'Gemini 3 Pro',
+        provider: 'nanobanana',
+        supportsImageToImage: true,
+        supportsMultiImage: false,
+        resolutions: ["1K", "2K"],
+        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "4:3", "3:4"]
+    },
+    {
+        id: 'gemini-3.1-flash-image-preview',
+        name: 'Gemini 3.1 Flash',
+        provider: 'nanobanana',
+        supportsImageToImage: true,
+        supportsMultiImage: false,
+        resolutions: ["1K", "2K"],
+        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "4:3", "3:4"]
     },
     // Kling AI models - Consolidated: removed legacy v1, v2, v2-new
     {
@@ -630,10 +656,10 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                         <button
                             onClick={() => onUpdate(data.id, { isPromptExpanded: !data.isPromptExpanded })}
                             className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded transition-colors ${isDark ? 'text-neutral-500 hover:text-white hover:bg-neutral-700' : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-200'}`}
-                            title={data.isPromptExpanded ? 'Shrink prompt' : 'Expand prompt'}
+                            title={data.isPromptExpanded ? t('shrink') : t('expand')}
                         >
                             {data.isPromptExpanded ? <Shrink size={12} /> : <Expand size={12} />}
-                            <span>{data.isPromptExpanded ? 'Shrink' : 'Expand'}</span>
+                            <span>{data.isPromptExpanded ? t('shrink') : t('expand')}</span>
                         </button>
                     </div>
                 </div>
@@ -652,7 +678,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span>
-                        <strong>Motion Control</strong> requires a character image. Please connect an Image node to define the character appearance.
+                        <strong>{t('motionControl')}</strong> requires a character image. Please connect an Image node to define the character appearance.
                     </span>
                 </div>
             )}
@@ -683,11 +709,11 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                         </div>
 
                                         {isLoadingLocalModels ? (
-                                            <div className="px-3 py-4 text-xs text-neutral-500 text-center">Loading models...</div>
+                                            <div className="px-3 py-4 text-xs text-neutral-500 text-center">{t('loadingModels')}</div>
                                         ) : localModels.length === 0 ? (
                                             <div className="px-3 py-4 text-xs text-neutral-500 text-center">
-                                                <p>No models found</p>
-                                                <p className="text-[10px] mt-1">Add .safetensors files to models/</p>
+                                                <p>{t('noModelsFound')}</p>
+                                                <p className="text-[10px] mt-1">{t('addModelFilesTip')}</p>
                                             </div>
                                         ) : (
                                             localModels.map(model => (
@@ -723,6 +749,8 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                         <GoogleIcon size={12} className="text-white" />
                                     ) : currentVideoModel.provider === 'kling' ? (
                                         <KlingIcon size={14} />
+                                    ) : currentVideoModel.provider === 'volcano' ? (
+                                        <VolcanoIcon size={14} />
                                     ) : (
                                         <Film size={12} className="text-cyan-400" />
                                     )}
@@ -739,10 +767,10 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                                 videoGenerationMode === 'image-to-video' ? 'bg-green-400' :
                                                     videoGenerationMode === 'motion-control' ? 'bg-orange-400' : 'bg-purple-400'
                                                 }`} />
-                                            {videoGenerationMode === 'text-to-video' ? 'Text → Video' :
-                                                videoGenerationMode === 'image-to-video' ? 'Image → Video' :
-                                                    videoGenerationMode === 'motion-control' ? 'Motion Control' :
-                                                        'Frame-to-Frame'}
+                                            {videoGenerationMode === 'text-to-video' ? t('textToVideo') :
+                                                videoGenerationMode === 'image-to-video' ? t('imageToVideo') :
+                                                    videoGenerationMode === 'motion-control' ? t('motionControl') :
+                                                        t('frameToFrame')}
                                         </div>
                                         {/* Google Models */}
                                         {availableVideoModels.filter(m => m.provider === 'google').length > 0 && (
@@ -819,6 +847,29 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                                 ))}
                                             </>
                                         )}
+
+                                        {/* Volcano Engine (Seedance) Models */}
+                                        {availableVideoModels.filter(m => m.provider === 'volcano').length > 0 && (
+                                            <>
+                                                <div className="px-3 py-1.5 text-[10px] font-bold text-neutral-500 uppercase tracking-wider bg-[#1f1f1f] border-t border-neutral-700">
+                                                    Volcano / Seedance
+                                                </div>
+                                                {availableVideoModels.filter(m => m.provider === 'volcano').map(model => (
+                                                    <button
+                                                        key={model.id}
+                                                        onClick={() => handleVideoModelChange(model.id)}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left hover:bg-[#333] transition-colors ${currentVideoModel.id === model.id ? 'text-blue-400' : 'text-neutral-300'
+                                                            }`}
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            <VolcanoIcon size={14} />
+                                                            {model.name}
+                                                        </span>
+                                                        {currentVideoModel.id === model.id && <Check size={12} />}
+                                                    </button>
+                                                ))}
+                                            </>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -830,7 +881,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                 >
                                     {currentImageModel.id === 'google-veo' ? ( // Keeping consistency if there was one, but mainly checking provider
                                         <GoogleIcon size={12} className="text-white" />
-                                    ) : currentImageModel.id === 'gemini-pro' ? (
+                                    ) : currentImageModel.provider === 'nanobanana' ? (
                                         <Banana size={12} className="text-yellow-400" />
                                     ) : currentImageModel.provider === 'openai' ? (
                                         <OpenAIIcon size={12} className="text-green-400" />
@@ -900,6 +951,32 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                                                 <GoogleIcon size={12} className="text-white" />
                                                             )}
                                                             {model.name}
+                                                        </span>
+                                                        {currentImageModel.id === model.id && <Check size={12} />}
+                                                    </button>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* NanoBanana / Gemini Models */}
+                                        {availableImageModels.filter(m => m.provider === 'nanobanana').length > 0 && (
+                                            <>
+                                                <div className="px-3 py-1.5 text-[10px] font-bold text-neutral-500 uppercase tracking-wider bg-[#1f1f1f] border-t border-neutral-700">
+                                                    NanoBanana (Gemini)
+                                                </div>
+                                                {availableImageModels.filter(m => m.provider === 'nanobanana').map(model => (
+                                                    <button
+                                                        key={model.id}
+                                                        onClick={() => handleImageModelChange(model.id)}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left hover:bg-[#333] transition-colors ${currentImageModel.id === model.id ? 'text-blue-400' : 'text-neutral-300'
+                                                            }`}
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            <Banana size={12} className="text-yellow-400" />
+                                                            {model.name}
+                                                            {model.recommended && (
+                                                                <span className="text-[9px] px-1 py-0.5 bg-green-600/30 text-green-400 rounded">REC</span>
+                                                            )}
                                                         </span>
                                                         {currentImageModel.id === model.id && <Check size={12} />}
                                                     </button>
@@ -1100,7 +1177,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                             ? 'bg-white text-neutral-900 hover:bg-neutral-100 active:scale-95'
                                             : 'bg-neutral-900 text-white hover:bg-neutral-800 active:scale-95'
                                         }`}
-                                    title={isFaceModeBlocked ? 'Cannot generate: No face detected in reference image' : 'Generate'}
+                                    title={isFaceModeBlocked ? t('cannotGenerateNoFace') : t('generate')}
                                 >
                                     <svg
                                         viewBox="0 0 24 24"
@@ -1215,7 +1292,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                 <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
-                                <span>No face detected. Please use a reference image with a clearer face.</span>
+                                <span>{t('noFaceDetectedHint')}</span>
                             </div>
                         </div>
                     )}
@@ -1283,7 +1360,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                             className="w-full flex items-center justify-center gap-1 cursor-pointer"
                         >
                             <span className="text-[10px] text-neutral-600 uppercase tracking-widest hover:text-neutral-400">
-                                Advanced Settings
+                                {t('advancedSettings')}
                             </span>
                             {showAdvanced ? (
                                 <ChevronUp size={12} className="text-neutral-600" />
@@ -1323,7 +1400,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
 
                                         {frameInputsWithUrls.length === 0 ? (
                                             <div className="text-xs text-neutral-600 italic py-2">
-                                                {videoGenerationMode === 'motion-control' ? 'Connect video and image nodes as references' : 'Connect image nodes to use as start/end frames'}
+                                                {videoGenerationMode === 'motion-control' ? t('motionControl') + ' requires video and image references' : t('frameToFrame') + ' requires image references'}
                                             </div>
                                         ) : videoGenerationMode === 'motion-control' ? (
                                             /* Horizontal layout for Motion Control */

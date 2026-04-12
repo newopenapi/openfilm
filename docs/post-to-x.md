@@ -1,6 +1,6 @@
 # Post to X (Twitter) Feature
 
-This feature allows you to share your generated images and videos directly to X (Twitter) from TwitCanva.
+This feature allows you to share your generated images and videos directly to X (Twitter) from OpenFilm.
 
 ## Overview
 
@@ -28,7 +28,7 @@ When you have an image or video node with generated content, you can click the "
 2. Enable **OAuth 2.0**
 3. Select **"Web App, Automated App or Bot"** as the app type
 4. Set **Callback URI**: `http://127.0.0.1:3001/api/twitter/callback`
-5. Set **Website URL**: Your production URL or `https://twitcanvaai.com`
+5. Set **Website URL**: Your production URL or `https://openfilm.ai`
 6. Save your settings
 7. Copy the **Client ID** and **Client Secret**
 

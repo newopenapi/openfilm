@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { Plus, Save, Loader2 } from 'lucide-react';
+import { Language } from '../i18n';
 
 interface TopBarProps {
     // Title
@@ -26,6 +27,9 @@ interface TopBarProps {
     // Theme
     canvasTheme: 'dark' | 'light';
     onToggleTheme: () => void;
+    // Language
+    currentLang: Language;
+    onToggleLanguage: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -42,7 +46,9 @@ export const TopBar: React.FC<TopBarProps> = ({
     lastAutoSaveTime,
     isChatOpen = false,
     canvasTheme,
-    onToggleTheme
+    onToggleTheme,
+    currentLang,
+    onToggleLanguage
 }) => {
     const [showNewConfirm, setShowNewConfirm] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -107,7 +113,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             >
                 {/* Left: Logo & Title */}
                 <div className="flex items-center gap-3 pointer-events-auto">
-                    <img src="/TwitCanva-logo.png" alt="TwitCanva Logo" className="w-8 h-8 rounded-lg object-contain bg-black/20" />
+                    <img src="/OpenFilm-logo.png" alt="OpenFilm Logo" className="w-8 h-8 rounded-lg object-contain bg-black/20" />
                     {isEditingTitle ? (
                         <input
                             ref={canvasTitleInputRef as React.RefObject<HTMLInputElement>}
@@ -137,7 +143,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             ? 'text-neutral-500 border-neutral-800'
                             : 'text-neutral-400 border-neutral-100'
                             }`}>
-                            Auto-saved {new Date(lastAutoSaveTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {currentLang === 'en' ? 'Auto-saved' : '已自动保存'} {new Date(lastAutoSaveTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                     )}
                     <button
@@ -148,7 +154,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             }`}
                     >
                         <Save size={16} />
-                        Save
+                        {currentLang === 'en' ? 'Save' : '保存'}
                     </button>
                     <button
                         onClick={handleNewClick}
@@ -158,7 +164,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                             }`}
                     >
                         <Plus size={16} />
-                        New
+                        {currentLang === 'en' ? 'New' : '新建'}
                     </button>
                     <button
                         onClick={onToggleTheme}
@@ -174,31 +180,55 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
                         )}
                     </button>
+                    {/* Language Toggle Button */}
+                    <button
+                        onClick={onToggleLanguage}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border text-sm font-bold ${
+                            canvasTheme === 'dark'
+                                ? 'bg-neutral-900 border-neutral-700 text-blue-400 hover:bg-neutral-800'
+                                : 'bg-white border-neutral-200 text-blue-600 hover:bg-neutral-50 shadow-sm'
+                        }`}
+                        title={currentLang === 'en' ? '切换到中文' : 'Switch to English'}
+                    >
+                        {currentLang === 'en' ? '中' : 'EN'}
+                    </button>
                 </div>
             </div>
 
             {/* Unsaved Changes Confirmation Modal */}
             {showNewConfirm && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
-                    <div className="bg-[#1a1a1a] border border-neutral-700 rounded-2xl p-6 w-[400px] shadow-2xl">
-                        <h3 className="text-lg font-semibold text-white mb-2">Unsaved Changes</h3>
-                        <p className="text-neutral-400 text-sm mb-6">
-                            You have unsaved changes. Would you like to save before creating a new canvas?
+                    <div className={`backdrop-blur-xl rounded-2xl p-6 w-[400px] shadow-2xl border ${
+                        canvasTheme === 'dark' 
+                            ? 'bg-[#1a1a1a]/95 border-neutral-700' 
+                            : 'bg-white/95 border-neutral-200'
+                    }`}>
+                        <h3 className={`text-lg font-semibold mb-2 ${canvasTheme === 'dark' ? 'text-white' : 'text-neutral-900'}`}>
+                            {currentLang === 'en' ? 'Unsaved Changes' : '未保存的更改'}
+                        </h3>
+                        <p className={`text-sm mb-6 ${canvasTheme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}`}>
+                            {currentLang === 'en' 
+                                ? 'You have unsaved changes. Would you like to save before creating a new canvas?' 
+                                : '您有未保存的更改。是否在创建新画布前保存？'}
                         </p>
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setShowNewConfirm(false)}
                                 disabled={isSaving}
-                                className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className={`px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    canvasTheme === 'dark'
+                                        ? 'bg-neutral-800 hover:bg-neutral-700 text-white'
+                                        : 'bg-neutral-200 hover:bg-neutral-300 text-neutral-900'
+                                }`}
                             >
-                                Cancel
+                                {currentLang === 'en' ? 'Cancel' : '取消'}
                             </button>
                             <button
                                 onClick={handleDiscardAndNew}
                                 disabled={isSaving}
                                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Discard
+                                {currentLang === 'en' ? 'Discard' : '放弃'}
                             </button>
                             <button
                                 onClick={handleSaveAndNew}
@@ -208,10 +238,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                                 {isSaving ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin" />
-                                        Saving...
+                                        {currentLang === 'en' ? 'Saving...' : '保存中...'}
                                     </>
                                 ) : (
-                                    'Save & New'
+                                    currentLang === 'en' ? 'Save & New' : '保存并新建'
                                 )}
                             </button>
                         </div>

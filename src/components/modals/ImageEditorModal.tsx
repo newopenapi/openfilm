@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { t } from '../../i18n';
 
 // Types and constants
 import {
@@ -458,7 +459,7 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
                             <polyline points="21 15 16 10 5 21" />
                         </svg>
                     </div>
-                    <span className="text-sm text-neutral-300">Image Editor</span>
+                    <span className="text-sm text-neutral-300">{t('imageEditor')}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -477,7 +478,7 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
                     <button
                         onClick={onClose}
                         className="w-10 h-10 rounded hover:bg-neutral-800 flex items-center justify-center text-neutral-400"
-                        title="Exit Image Editor"
+                        title={t('exitImageEditor')}
                     >
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M18 6L6 18M6 6l12 12" />
@@ -810,7 +811,7 @@ export const ImageEditorModal: React.FC<ImageEditorModalProps> = ({
                         </div>
                     ) : (
                         <div className="w-[600px] h-[400px] bg-neutral-100 rounded flex items-center justify-center">
-                            <span className="text-neutral-400">No image loaded</span>
+                            <span className="text-neutral-400">{t('noImageLoaded')}</span>
                         </div>
                     )}
                 </div>

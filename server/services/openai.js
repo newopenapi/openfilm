@@ -82,10 +82,15 @@ async function base64ToFile(base64Data, filename = 'image.png') {
  * @param {string} [params.aspectRatio] - Aspect ratio (1:1, 16:9, 9:16, Auto)
  * @param {string} [params.resolution] - Resolution/quality setting (1K, 2K, 4K, Auto)
  * @param {string} params.apiKey - OpenAI API key
+ * @param {string} [params.baseUrl] - Optional custom API base URL (for proxies)
  * @returns {Promise<Buffer>} Image buffer
  */
-export async function generateOpenAIImage({ prompt, imageBase64Array, aspectRatio, resolution, apiKey }) {
-    const openai = new OpenAI({ apiKey });
+export async function generateOpenAIImage({ prompt, imageBase64Array, aspectRatio, resolution, apiKey, baseUrl }) {
+    const openaiOptions = { apiKey };
+    if (baseUrl) {
+        openaiOptions.baseURL = baseUrl;
+    }
+    const openai = new OpenAI(openaiOptions);
 
     const size = mapAspectRatioToSize(aspectRatio);
     const quality = mapResolutionToQuality(resolution);

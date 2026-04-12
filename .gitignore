@@ -45,3 +45,7 @@ models/
 # Agent workflows and shared utilities
 .agent/
 .shared/
+
+
+# Agent workflow storage
+.workbuddy/
