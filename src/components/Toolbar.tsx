@@ -7,7 +7,8 @@ import {
   Wrench,
   MoreHorizontal,
   Plus,
-  Film
+  Film,
+  Users
 } from 'lucide-react';
 import { t } from '../i18n';
 
@@ -38,8 +39,10 @@ interface ToolbarProps {
   onAssetsClick?: (e: React.MouseEvent) => void;
   onTikTokClick?: (e: React.MouseEvent) => void;
   onStoryboardClick?: (e: React.MouseEvent) => void;
+  onCollaborationClick?: (e: React.MouseEvent) => void;
   onToolsOpen?: () => void; // Called when tools dropdown opens to close other panels
   canvasTheme?: 'dark' | 'light';
+  onlineUsersCount?: number;
 }
 
 // ============================================================================
@@ -53,8 +56,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onAssetsClick,
   onTikTokClick,
   onStoryboardClick,
+  onCollaborationClick,
   onToolsOpen,
-  canvasTheme = 'dark'
+  canvasTheme = 'dark',
+  onlineUsersCount = 0
 }) => {
   const [isToolsOpen, setIsToolsOpen] = useState(false);
   const toolsRef = useRef<HTMLDivElement>(null);
@@ -119,6 +124,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           title={t('history')}
         >
           <History size={20} />
+        </button>
+
+        {/* Collaboration Button */}
+        <button
+          className={`hover:scale-125 transition-all duration-200 relative ${isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'
+            }`}
+          onClick={onCollaborationClick}
+          title={t('collaboration') || 'Collaboration'}
+        >
+          <Users size={20} />
+          {onlineUsersCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center">
+              {onlineUsersCount}
+            </span>
+          )}
         </button>
 
         {/* Tools Dropdown */}

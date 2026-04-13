@@ -12,12 +12,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "setup:local-models": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'setup-local-models.bat' : 'bash setup-local-models.sh', {stdio: 'inherit'})\"",
-    
     "electron:dev": "concurrently \"vite\" \"node electron/wait-for-vite.cjs && electron .\"",
     "electron:build": "vite build && electron-builder",
     "electron:build:mac": "vite build && electron-builder --mac",
     "electron:build:win": "vite build && electron-builder --win",
-    "electron:build:linux": "vite build && electron-builder --linux"
+    "electron:build:linux": "vite build && electron-builder --linux",
+    "db:init": "node scripts/init-database.cjs",
+    "test:integration": "node scripts/integration-test.cjs",
+    "test": "node scripts/integration-test.cjs"
   },
   "dependencies": {
     "@fal-ai/client": "^1.8.0",
@@ -29,23 +31,33 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@types/three": "^0.182.0",
+    "bcryptjs": "^3.0.3",
     "electron-store": "^8.2.0",
+    "express-validator": "^7.3.2",
     "face-api.js": "^0.22.2",
     "form-data": "^4.0.5",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.556.0",
+    "multer": "^2.1.1",
+    "mysql2": "^3.22.0",
     "openai": "^6.14.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "redis": "^4.7.0",
+    "sequelize": "^6.37.8",
     "sharp": "^0.34.5",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "three": "^0.182.0",
-    "twitter-api-v2": "^1.28.0"
+    "twitter-api-v2": "^1.28.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "concurrently": "^9.2.1",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
     "electron": "^35.2.1",
     "electron-builder": "^26.0.12",
     "express": "^5.2.1",
@@ -84,14 +96,23 @@
     "mac": {
       "category": "public.app-category.graphics-design",
       "icon": "public/icon.icns",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "public/icon.ico"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "public/icon.png",
       "category": "Graphics"
     },

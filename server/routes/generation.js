@@ -14,6 +14,7 @@ import { generateHailuoVideo } from '../services/hailuo.js';
 import { generateOpenAIImage } from '../services/openai.js';
 import { generateVolcanoVideo } from '../services/volcano.js';
 import { generateNanoBananaImage } from '../services/nanobanana.js';
+import { generateDoubaoImage } from '../services/doubao.js';
 import { resolveImageToBase64, saveBufferToFile } from '../utils/imageHelpers.js';
 
 const router = express.Router();
@@ -25,12 +26,14 @@ const router = express.Router();
 router.post('/generate-image', async (req, res) => {
     try {
         const { nodeId, prompt, aspectRatio, resolution, imageBase64: rawImageBase64, imageModel, klingReferenceMode, klingFaceIntensity, klingSubjectIntensity } = req.body;
-        const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, OPENAI_API_KEY, OPENAI_BASE_URL, NANOBANANA_API_KEY, NANOBANANA_BASE_URL, IMAGES_DIR } = req.app.locals;
+        const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, OPENAI_API_KEY, OPENAI_BASE_URL, NANOBANANA_API_KEY, NANOBANANA_BASE_URL, VOLCANO_API_KEY, VOLCANO_BASE_URL, IMAGES_DIR } = req.app.locals;
 
         // Determine provider
         const isKlingModel = imageModel && imageModel.startsWith('kling-');
         const isOpenAIModel = imageModel && imageModel.startsWith('gpt-image-');
         const isNanoBananaModel = imageModel && (imageModel.startsWith('gemini-2.5-flash-image') || imageModel.startsWith('gemini-3-pro-image') || imageModel.startsWith('gemini-3.1-flash-image'));
+        // 豆包 Seedream 图片模型
+        const isDoubaoSeedreamModel = imageModel && (imageModel.startsWith('seedream-'));
 
         let imageBuffer;
         let imageFormat = 'png';
@@ -175,6 +178,45 @@ router.post('/generate-image', async (req, res) => {
                 imageBuffer = Buffer.from(nanobananaResult, 'base64');
             }
 
+        } else if (isDoubaoSeedreamModel) {
+            // --- DOUBAN (SEEDREAM) IMAGE GENERATION ---
+            // 豆包 Seedream 模型使用火山引擎 API Key
+            if (!VOLCANO_API_KEY) {
+                return res.status(500).json({
+                    error: "火山引擎 API key not configured. Add VOLCANO_API_KEY to .env"
+                });
+            }
+
+            console.log(`Using Doubao Seedream model: ${imageModel}`);
+
+            // Resolve reference image if provided
+            const refImageBase64 = rawImageBase64 ? resolveImageToBase64(rawImageBase64) : null;
+
+            // Generate image using Doubao Seedream API
+            const seedreamUrls = await generateDoubaoImage({
+                prompt,
+                refImageBase64,
+                modelId: imageModel,
+                aspectRatio,
+                apiKey: VOLCANO_API_KEY,
+                baseUrl: VOLCANO_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
+                watermark: false
+            });
+
+            // Get first image URL
+            const imageUrl = Array.isArray(seedreamUrls) ? seedreamUrls[0] : seedreamUrls;
+
+            // Download the generated image
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) {
+                throw new Error('Failed to download image from Doubao Seedream');
+            }
+            imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+
+            if (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg')) {
+                imageFormat = 'jpg';
+            }
+
         } else {
             // --- GEMINI IMAGE GENERATION (Default) ---
             if (!GEMINI_API_KEY) {
@@ -228,7 +270,7 @@ router.post('/generate-image', async (req, res) => {
 
 router.post('/generate-video', async (req, res) => {
     try {
-        const { nodeId, prompt, imageBase64: rawImageBase64, lastFrameBase64: rawLastFrameBase64, motionReferenceUrl: rawMotionReferenceUrl, aspectRatio, resolution, duration, videoModel } = req.body;
+        const { nodeId, prompt, imageBase64: rawImageBase64, lastFrameBase64: rawLastFrameBase64, motionReferenceUrl: rawMotionReferenceUrl, aspectRatio, resolution, duration, videoModel, seed, cameraFixed, generateAudio, watermark, returnLastFrame } = req.body;
         const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, HAILUO_API_KEY, HAILUO_BASE_URL, FAL_API_KEY, FAL_BASE_URL, VOLCANO_API_KEY, VOLCANO_BASE_URL, VIDEOS_DIR } = req.app.locals;
 
         // Resolve file URLs to base64
@@ -261,6 +303,11 @@ router.post('/generate-video', async (req, res) => {
                 aspectRatio,
                 resolution,
                 duration: duration || 5,
+                seed,
+                cameraFixed,
+                generateAudio,
+                watermark,
+                returnLastFrame,
                 apiKey: VOLCANO_API_KEY,
                 baseUrl: VOLCANO_BASE_URL
             });

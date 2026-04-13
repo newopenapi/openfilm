@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
@@ -17,12 +18,17 @@ import tiktokPostRoutes from './routes/tiktok-post.js';
 import { processTikTokVideo, isValidTikTokUrl } from './tools/tiktok.js';
 import localModelsRoutes from './routes/local-models.js';
 import storyboardRoutes from './routes/storyboard.js';
+import { setupAuthRoutes, setupAdminRoutes, setupUserRoutes, setupUploadRoutes, setupModelsRoutes } from './routes-multiuser/index.js';
+import { initSocketIO } from './services/socketio.cjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3001;
+
+// Create HTTP server for Socket.IO integration
+const httpServer = createServer(app);
 
 // Ensure library directories exist
 const LIBRARY_DIR = path.join(__dirname, '..', 'library');
@@ -277,6 +283,11 @@ function sanitizeWorkflowNodes(nodes) {
     return sanitized;
 }
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Mount generation routes (image and video generation)
 app.use('/api', generationRoutes);
 
@@ -291,6 +302,34 @@ app.use('/api/local-models', localModelsRoutes);
 
 // Mount Storyboard routes (AI script generation)
 app.use('/api/storyboard', storyboardRoutes);
+
+// Mount Chat routes (Doubao 2.0 chat models)
+import chatRoutes from './routes/chat.js';
+app.use('/api/chat', chatRoutes);
+
+// Mount Multi-user API routes
+setupAuthRoutes(app);
+setupAdminRoutes(app);
+setupUserRoutes(app);
+setupUploadRoutes(app);
+
+// Mount Subscription & Credits routes
+import subscriptionRoutes from './routes/subscription.cjs';
+app.use('/api/subscription', subscriptionRoutes);
+
+// Mount Models management routes
+setupModelsRoutes(app);
+
+// Mount Projects routes
+import projectsRoutes from './routes/projects.cjs';
+app.use('/api/projects', projectsRoutes);
+
+// Mount Assets routes
+import assetsRoutes from './routes/assets.cjs';
+app.use('/api/assets', assetsRoutes);
+
+// Initialize Socket.IO for real-time collaboration
+initSocketIO(httpServer);
 
 // NOTE: Old Kling helpers removed - now in server/services/kling.js
 
@@ -1280,6 +1319,6 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Backend server running on http://localhost:${PORT}`);
 });

@@ -33,6 +33,12 @@ interface TopBarProps {
     // Settings (Electron)
     isElectron?: boolean;
     onOpenSettings?: () => void;
+    // User menu
+    user?: {
+        username: string;
+        role: string;
+    } | null;
+    onOpenAuth?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -53,7 +59,9 @@ export const TopBar: React.FC<TopBarProps> = ({
     currentLang,
     onToggleLanguage,
     isElectron,
-    onOpenSettings
+    onOpenSettings,
+    user,
+    onOpenAuth
 }) => {
     const [showNewConfirm, setShowNewConfirm] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -196,6 +204,32 @@ export const TopBar: React.FC<TopBarProps> = ({
                             title={currentLang === 'en' ? 'Settings' : '设置'}
                         >
                             <Settings size={18} />
+                        </button>
+                    )}
+                    {/* User Button / Login */}
+                    {user ? (
+                        <button
+                            onClick={onOpenAuth}
+                            className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm">
+                                {user.username.charAt(0).toUpperCase()}
+                            </div>
+                            {user.role === 'admin' && (
+                                <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">
+                                    Admin
+                                </span>
+                            )}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onOpenAuth}
+                            className={`text-sm px-4 py-2 rounded-full transition-colors font-medium border ${canvasTheme === 'dark'
+                                ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500'
+                                : 'bg-blue-500 hover:bg-blue-400 text-white border-blue-400 shadow-sm'
+                                }`}
+                        >
+                            {currentLang === 'en' ? 'Login' : '登录'}
                         </button>
                     )}
                     {/* Language Toggle Button */}

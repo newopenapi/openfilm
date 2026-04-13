@@ -54,6 +54,12 @@ import { useStoryboardGenerator } from './hooks/useStoryboardGenerator';
 import { StoryboardGeneratorModal } from './components/modals/StoryboardGeneratorModal';
 import { StoryboardVideoModal } from './components/modals/StoryboardVideoModal';
 import { SettingsModal } from './components/modals/SettingsModal';
+import { AuthModal } from './components/AuthModal';
+import { CollaborationPanel } from './components/CollaborationPanel';
+import { CursorOverlay } from './components/CursorOverlay';
+import { AdminPage } from './pages/AdminPage';
+import { collaborationService, CollaborationUser, CursorPosition } from './services/socketService';
+import { isAuthenticated, getCurrentUser, User } from './services/authService';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -97,6 +103,17 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isElectron, setIsElectron] = useState(false);
   
+  // Auth state (Multi-user) - Force login if not authenticated
+  const [isAuthOpen, setIsAuthOpen] = useState(!getCurrentUser());
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(getCurrentUser());
+  
+  // Collaboration state
+  const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<CollaborationUser[]>([]);
+  const [remoteCursors, setRemoteCursors] = useState<Map<string, { user: CollaborationUser; position: CursorPosition }>>(new Map());
+  const [currentProjectId, setCurrentProjectId] = useState<number | null>(null);
+  
   // Detect if running in Electron
   useEffect(() => {
     const checkElectron = () => {
@@ -125,6 +142,88 @@ export default function App() {
     setCurrentLang(newLang);
     // Force re-render for all translated components
     forceUpdate({});
+  };
+
+  // ============================================================================
+  // COLLABORATION SETUP
+  // ============================================================================
+  
+  // Connect to socket when user is authenticated
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const connectSocket = async () => {
+      try {
+        await collaborationService.connect();
+        
+        // Listen for project users
+        collaborationService.on('projectUsers', (users: CollaborationUser[]) => {
+          setOnlineUsers(users);
+        });
+        
+        // Listen for user joined
+        collaborationService.on('userJoined', (user: CollaborationUser) => {
+          setOnlineUsers(prev => {
+            if (prev.find(u => u.userId === user.userId)) return prev;
+            return [...prev, user];
+          });
+        });
+        
+        // Listen for user left
+        collaborationService.on('userLeft', (user: CollaborationUser) => {
+          setOnlineUsers(prev => prev.filter(u => u.userId !== user.userId));
+          setRemoteCursors(prev => {
+            const newCursors = new Map(prev);
+            newCursors.delete(user.userId);
+            return newCursors;
+          });
+        });
+        
+        // Listen for cursor moves
+        collaborationService.on('cursorMoved', (data: { userId: string; username: string; position: CursorPosition }) => {
+          setRemoteCursors(prev => {
+            const newCursors = new Map(prev);
+            newCursors.set(data.userId, {
+              user: { userId: data.userId, username: data.username },
+              position: data.position
+            });
+            return newCursors;
+          });
+        });
+        
+        console.log('[App] Collaboration socket connected');
+      } catch (error) {
+        console.error('[App] Failed to connect collaboration socket:', error);
+      }
+    };
+    
+    connectSocket();
+    
+    return () => {
+      collaborationService.disconnect();
+    };
+  }, [currentUser]);
+  
+  // Join project when projectId is available
+  useEffect(() => {
+    if (!currentUser || !currentProjectId) return;
+    
+    collaborationService.joinProject(currentProjectId.toString());
+    
+    return () => {
+      collaborationService.leaveProject(currentProjectId.toString());
+    };
+  }, [currentUser, currentProjectId]);
+  
+  // Track mouse movement for cursor sync
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (currentProjectId && collaborationService.isConnected()) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      collaborationService.moveCursor(currentProjectId.toString(), {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
   };
 
   // Panel state management (history, chat, asset library, expand)
@@ -966,12 +1065,14 @@ export default function App() {
           onAssetsClick={handleAssetsClick}
           onTikTokClick={openTikTokModal}
           onStoryboardClick={storyboardGenerator.openModal}
+          onCollaborationClick={() => setIsCollaborationOpen(!isCollaborationOpen)}
           onToolsOpen={() => {
             closeWorkflowPanel();
             closeHistoryPanel();
             closeAssetLibrary();
           }}
           canvasTheme={canvasTheme}
+          onlineUsersCount={onlineUsers.length}
         />
       )}
 
@@ -1080,6 +1181,8 @@ export default function App() {
           onToggleLanguage={handleToggleLanguage}
           isElectron={isElectron}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          user={currentUser}
+          onOpenAuth={() => setIsAuthOpen(true)}
         />
       )}
 
@@ -1446,6 +1549,44 @@ export default function App() {
           isElectron={isElectron}
         />
       )}
+      
+      {/* Login Required Overlay - Blocks access when not logged in */}
+      {!currentUser && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998] flex items-center justify-center">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+        </div>
+      )}
+
+      {/* Auth Modal - Required for non-authenticated users */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => {
+          // Prevent closing unless authenticated
+          const user = getCurrentUser();
+          if (user) setIsAuthOpen(false);
+        }}
+        onSuccess={() => {
+          setCurrentUser(getCurrentUser());
+          setIsAuthOpen(false);
+        }}
+        onOpenAdmin={() => setIsAdminOpen(true)}
+      />
+
+      {/* Admin Page - Full Screen */}
+      {isAdminOpen && (
+        <AdminPage onClose={() => setIsAdminOpen(false)} />
+      )}
+
+      {/* Collaboration Panel */}
+      {currentUser && isCollaborationOpen && (
+        <CollaborationPanel
+          projectId={(currentProjectId || (workflowId ? parseInt(workflowId) : 0)).toString()}
+          onClose={() => setIsCollaborationOpen(false)}
+        />
+      )}
+
+      {/* Cursor Overlay for remote users */}
+      <CursorOverlay cursors={remoteCursors} />
     </div >
   );
 }

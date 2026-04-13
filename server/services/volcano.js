@@ -132,6 +132,13 @@ async function pollVolcanoVideoTask(taskId, baseUrl, apiKey, maxWaitMs = 600000)
 
 /**
  * Generate video using Volcano Engine (Seedance)
+ * 
+ * Advanced Parameters:
+ * - seed: Random seed for reproducibility (integer)
+ * - camera_fixed: Whether to fix camera movement (boolean, default: false)
+ * - generate_audio: Whether to generate audio (boolean, default: true)
+ * - watermark: Whether to add watermark (boolean, default: false)
+ * - return_last_frame: Whether to return the last frame (boolean, default: false)
  */
 export async function generateVolcanoVideo({
     prompt,
@@ -141,6 +148,11 @@ export async function generateVolcanoVideo({
     aspectRatio,
     resolution,
     duration,
+    seed,
+    cameraFixed,
+    generateAudio,
+    watermark,
+    returnLastFrame,
     apiKey,
     baseUrl = DEFAULT_BASE_URL
 }) {
@@ -208,9 +220,32 @@ export async function generateVolcanoVideo({
         content: content,
         ratio: aspectRatio === 'Auto' ? '16:9' : aspectRatio,
         duration: mappedDuration,
-        generate_audio: true,
-        watermark: false
+        generate_audio: generateAudio !== undefined ? generateAudio : true,
+        watermark: watermark !== undefined ? watermark : false
     };
+
+    // Add advanced parameters to extra_body (Seedance 2.0 API)
+    const extraBody = {};
+    
+    // Random seed for reproducibility
+    if (seed !== undefined && seed !== null) {
+        extraBody.seed = parseInt(seed);
+    }
+    
+    // Camera fixed mode
+    if (cameraFixed !== undefined) {
+        extraBody.camera_fixed = !!cameraFixed;
+    }
+    
+    // Return last frame
+    if (returnLastFrame !== undefined) {
+        extraBody.return_last_frame = !!returnLastFrame;
+    }
+
+    // Add extra_body only if there are advanced parameters
+    if (Object.keys(extraBody).length > 0) {
+        body.extra_body = extraBody;
+    }
 
     console.log('=== Volcano Video Generation ===');
     console.log('Model:', modelName);

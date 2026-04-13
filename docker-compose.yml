@@ -1,22 +1,100 @@
 version: '3.8'
 
 services:
-  twitcanva:
+  # Application Service
+  app:
     build: .
     image: openfilm:latest
     container_name: openfilm-app
     ports:
       - "3001:3001"
+      - "5173:5173"
     volumes:
       # CRITICAL: Mount the local library folder to the container to persist data
       - ./library:/app/library
     environment:
       - NODE_ENV=production
-      # Pass through API keys from host environment or .env file
+      # Database
+      - DATABASE_URL=mysql://root:root@mysql:3306/openfilm
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=openfilm
+      # Redis
+      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # JWT
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_EXPIRES_IN=7d
+      # API Keys
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - KLING_ACCESS_KEY=${KLING_ACCESS_KEY}
       - KLING_SECRET_KEY=${KLING_SECRET_KEY}
       - HAILUO_API_KEY=${HAILUO_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - FAL_API_KEY=${FAL_API_KEY}
+      - VOLCANO_API_KEY=${VOLCANO_API_KEY}
+      # Tencent COS
+      - TENCENT_SECRET_ID=${TENCENT_SECRET_ID}
+      - TENCENT_SECRET_KEY=${TENCENT_SECRET_KEY}
+      - TENCENT_BUCKET=${TENCENT_BUCKET}
+      - TENCENT_REGION=${TENCENT_REGION}
+      # CORS
+      - CORS_ORIGIN=http://localhost:5173
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - openfilm-network
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: openfilm-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=openfilm
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - openfilm-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: openfilm-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - openfilm-network
+
+networks:
+  openfilm-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

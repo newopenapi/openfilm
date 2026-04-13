@@ -31,6 +31,11 @@ export interface GenerateVideoParams {
   motionReferenceUrl?: string; // For Kling 2.6 motion control
   generateAudio?: boolean; // For Kling 2.6 and Veo 3.1 native audio (default: true)
   nodeId?: string; // ID of the node initiating generation
+  // Seedance 2.0 Advanced Parameters
+  seed?: number; // Random seed for reproducibility
+  cameraFixed?: boolean; // Whether to fix camera movement
+  watermark?: boolean; // Whether to add watermark
+  returnLastFrame?: boolean; // Whether to return the last frame
 }
 
 /**

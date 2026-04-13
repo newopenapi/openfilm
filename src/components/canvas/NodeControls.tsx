@@ -1372,8 +1372,8 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                         {/* Advanced Settings Content - Only for Video nodes */}
                         {showAdvanced && isVideoNode && (
                             <div className="mt-3 space-y-3">
-                                {/* Audio Toggle - Only for Kling 2.6 (Veo 3.1 SDK doesn't support generateAudio yet) */}
-                                {data.videoModel === 'kling-v2-6' && (
+                                {/* Audio Toggle - For Kling 2.6 and Seedance 2.0 */}
+                                {(data.videoModel === 'kling-v2-6' || data.videoModel?.startsWith('seedance-')) && (
                                     <div className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-neutral-800/50 rounded-lg w-fit">
                                         <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
@@ -1387,6 +1387,66 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                                 className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform shadow-md ${data.generateAudio !== false ? 'left-4' : 'left-0.5'}`}
                                             />
                                         </button>
+                                    </div>
+                                )}
+
+                                {/* Seedance 2.0 Advanced Settings */}
+                                {data.videoModel?.startsWith('seedance-') && (
+                                    <div className="space-y-2 pt-2 border-t border-neutral-700/50">
+                                        <div className="text-[10px] text-neutral-500 uppercase tracking-wider font-medium">
+                                            Seedance 2.0 {t('advancedSettings')}
+                                        </div>
+
+                                        {/* Seed Input */}
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-[11px] text-neutral-400 w-16">Seed</label>
+                                            <input
+                                                type="number"
+                                                value={data.seed || ''}
+                                                onChange={(e) => onUpdate(data.id, { seed: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                placeholder="Random"
+                                                className="flex-1 px-2 py-1 text-[11px] bg-neutral-800 border border-neutral-700 rounded focus:outline-none focus:border-cyan-600 text-neutral-200"
+                                            />
+                                        </div>
+
+                                        {/* Camera Fixed Toggle */}
+                                        <div className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-neutral-800/50 rounded-lg">
+                                            <span className="text-[11px] text-neutral-300">Fixed Camera</span>
+                                            <button
+                                                onClick={() => onUpdate(data.id, { cameraFixed: !data.cameraFixed })}
+                                                className={`relative w-8 h-4 rounded-full transition-colors ${data.cameraFixed ? 'bg-cyan-600' : 'bg-neutral-700'}`}
+                                            >
+                                                <span
+                                                    className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform shadow-md ${data.cameraFixed ? 'left-4' : 'left-0.5'}`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Watermark Toggle */}
+                                        <div className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-neutral-800/50 rounded-lg">
+                                            <span className="text-[11px] text-neutral-300">Watermark</span>
+                                            <button
+                                                onClick={() => onUpdate(data.id, { watermark: !data.watermark })}
+                                                className={`relative w-8 h-4 rounded-full transition-colors ${data.watermark ? 'bg-cyan-600' : 'bg-neutral-700'}`}
+                                            >
+                                                <span
+                                                    className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform shadow-md ${data.watermark ? 'left-4' : 'left-0.5'}`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Return Last Frame Toggle */}
+                                        <div className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-neutral-800/50 rounded-lg">
+                                            <span className="text-[11px] text-neutral-300">Return Last Frame</span>
+                                            <button
+                                                onClick={() => onUpdate(data.id, { returnLastFrame: !data.returnLastFrame })}
+                                                className={`relative w-8 h-4 rounded-full transition-colors ${data.returnLastFrame ? 'bg-cyan-600' : 'bg-neutral-700'}`}
+                                            >
+                                                <span
+                                                    className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform shadow-md ${data.returnLastFrame ? 'left-4' : 'left-0.5'}`}
+                                                />
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
