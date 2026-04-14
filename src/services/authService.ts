@@ -3,7 +3,7 @@
  * 处理用户登录、注册、Token 管理
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Token 存储键
 const TOKEN_KEY = 'auth_token';
@@ -47,7 +47,7 @@ export interface RegisterData {
 }
 
 // API 请求函数
-async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+export async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   
   const headers: HeadersInit = {
@@ -63,14 +63,20 @@ async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T>
     ...options,
     headers,
   });
-  
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.message || '请求失败');
+
+  const text = await response.text();
+  let data: any = null;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`服务返回非 JSON（请检查前端 API_BASE 或反向代理 /api 配置）。状态码: ${response.status}`);
   }
-  
-  return data;
+
+  if (!response.ok) {
+    throw new Error(data.message || data.error || '请求失败');
+  }
+
+  return data as T;
 }
 
 // Token 管理

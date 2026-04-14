@@ -4,6 +4,8 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { collaborationService, CollaborationUser, ChatMessage } from '../services/socketService';
+import { t } from '../i18n';
+import { Check, Copy, Send, Share2, Users, MessageSquare, Link as LinkIcon, X } from 'lucide-react';
 
 interface CollaborationPanelProps {
   projectId: string;
@@ -41,13 +43,13 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ projectI
         }
         return [...prev, data];
       });
-      addSystemMessage(`${data.username} joined the project`);
+      addSystemMessage(t('collaborationUserJoined').replace('{name}', data.username));
     };
 
     // 监听用户离开
     const handleUserLeft = (data: CollaborationUser) => {
       setUsers(prev => prev.filter(u => u.userId !== data.userId));
-      addSystemMessage(`${data.username} left the project`);
+      addSystemMessage(t('collaborationUserLeft').replace('{name}', data.username));
     };
 
     // 监听聊天消息
@@ -95,6 +97,13 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ projectI
       case 'viewer': return 'text-gray-500';
       default: return 'text-gray-400';
     }
+  };
+
+  const roleLabel = (role?: string) => {
+    if (role === 'owner') return t('collaborationRoleOwner');
+    if (role === 'editor') return t('collaborationRoleEditor');
+    if (role === 'viewer') return t('collaborationRoleViewer');
+    return t('collaborationRoleMember');
   };
 
   // 生成邀请链接
@@ -148,59 +157,64 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ projectI
   };
 
   return (
-    <div className="fixed right-4 top-20 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 flex flex-col max-h-[calc(100vh-120px)]">
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="font-semibold text-gray-800 dark:text-white">Collaboration</h3>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-        >
-          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+    <div className="fixed inset-0 z-[70]">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-8 rounded-2xl border border-neutral-800 bg-gradient-to-b from-[#111] to-[#0b0b0b] shadow-2xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-8 pt-8 pb-6">
+          <div className="text-2xl font-semibold text-white">{t('collaborationTitle')}</div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 hover:bg-black/50 flex items-center justify-center"
+            title={t('cancel')}
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          className={`flex-1 py-2 text-sm font-medium ${activeTab === 'users' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('users')}
-        >
-          Users ({users.length})
-        </button>
-        <button
-          className={`flex-1 py-2 text-sm font-medium ${activeTab === 'chat' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('chat')}
-        >
-          Chat
-        </button>
-        <button
-          className={`flex-1 py-2 text-sm font-medium ${activeTab === 'invite' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-          onClick={() => { setActiveTab('invite'); generateInviteLink(); }}
-        >
-          Invite
-        </button>
-      </div>
+        <div className="px-8">
+          <div className="inline-flex rounded-xl border border-neutral-800 bg-black/30 p-1">
+            <button
+              className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${activeTab === 'users' ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
+              onClick={() => setActiveTab('users')}
+            >
+              <Users size={16} />
+              <span>{t('collaborationTabUsers')} ({users.length})</span>
+            </button>
+            <button
+              className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${activeTab === 'chat' ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
+              onClick={() => setActiveTab('chat')}
+            >
+              <MessageSquare size={16} />
+              <span>{t('collaborationTabChat')}</span>
+            </button>
+            <button
+              className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${activeTab === 'invite' ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
+              onClick={() => { setActiveTab('invite'); generateInviteLink(); }}
+            >
+              <LinkIcon size={16} />
+              <span>{t('collaborationTabInvite')}</span>
+            </button>
+          </div>
+        </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-8 pb-10 pt-6">
         {activeTab === 'users' && (
-          <div className="p-3 space-y-2">
+          <div className="space-y-3">
             {users.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center">No other users online</p>
+              <div className="rounded-2xl border border-neutral-800 bg-black/30 p-8 text-center text-neutral-500 text-sm">
+                {t('collaborationNoOtherUsers')}
+              </div>
             ) : (
               users.map(user => (
-                <div key={user.userId} className="flex items-center gap-2 p-2 rounded bg-gray-50 dark:bg-gray-700">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                <div key={user.userId} className="flex items-center gap-3 p-3 rounded-2xl border border-neutral-800 bg-black/30">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
                     {user.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-gray-800 dark:text-white">{user.username}</p>
-                    <p className={`text-xs ${getRoleColor(user.role)}`}>{user.role || 'member'}</p>
+                    <div className="font-medium text-white">{user.username}</div>
+                    <div className={`text-xs ${getRoleColor(user.role)}`}>{roleLabel(user.role)}</div>
                   </div>
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
                 </div>
               ))
             )}
@@ -209,20 +223,20 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ projectI
 
         {activeTab === 'chat' && (
           <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <div className="flex-1 overflow-y-auto space-y-3 rounded-2xl border border-neutral-800 bg-black/30 p-4">
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.userId === 'system' ? 'justify-center' : ''}`}>
                   {msg.userId === 'system' ? (
-                    <span className="text-xs text-gray-400 italic">{msg.message}</span>
+                    <span className="text-xs text-neutral-500 italic">{msg.message}</span>
                   ) : (
                     <div className="max-w-[85%]">
                       <div className="flex items-baseline gap-1">
-                        <span className="font-medium text-sm text-blue-600">{msg.username}</span>
-                        <span className="text-xs text-gray-400">
+                        <span className="font-medium text-sm text-blue-300">{msg.username}</span>
+                        <span className="text-xs text-neutral-600">
                           {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">
+                      <p className="text-sm text-neutral-200 bg-white/5 border border-neutral-800 rounded-lg px-3 py-2">
                         {msg.message}
                       </p>
                     </div>
@@ -231,21 +245,22 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ projectI
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <div className="p-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-3">
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type a message..."
-                  className="flex-1 px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder={t('collaborationTypeMessage')}
+                  className="flex-1 px-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-blue-500"
                 />
                 <button
                   onClick={handleSendMessage}
-                  className="px-3 py-1.5 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-sm font-medium flex items-center gap-2"
                 >
-                  Send
+                  <Send size={16} />
+                  {t('collaborationSend')}
                 </button>
               </div>
             </div>
@@ -253,96 +268,74 @@ export const CollaborationPanel: React.FC<CollaborationPanelProps> = ({ projectI
         )}
 
         {activeTab === 'invite' && (
-          <div className="p-4 space-y-4">
+          <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-gray-800 dark:text-white mb-2">Invite Collaborators</h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Share this link to invite others to collaborate on this project.
-              </p>
+              <div className="text-lg font-semibold text-white">{t('collaborationInviteTitle')}</div>
+              <div className="mt-2 text-sm text-neutral-500">{t('collaborationInviteDesc')}</div>
             </div>
 
-            {/* Permission Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Permission Level
-              </label>
-              <div className="flex gap-2">
+              <div className="text-xs text-neutral-500 mb-2">{t('collaborationPermissionLevel')}</div>
+              <div className="inline-flex rounded-xl border border-neutral-800 bg-black/30 p-1">
                 <button
                   onClick={() => setInviteRole('editor')}
-                  className={`flex-1 py-2 px-3 rounded text-sm ${
-                    inviteRole === 'editor'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${inviteRole === 'editor' ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
                 >
-                  Editor
+                  {t('collaborationRoleEditor')}
                 </button>
                 <button
                   onClick={() => setInviteRole('viewer')}
-                  className={`flex-1 py-2 px-3 rounded text-sm ${
-                    inviteRole === 'viewer'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${inviteRole === 'viewer' ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
                 >
-                  Viewer
+                  {t('collaborationRoleViewer')}
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {inviteRole === 'editor' 
-                  ? 'Can edit nodes, add connections, and chat'
-                  : 'Can view the project and chat only'}
-              </p>
+              <div className="mt-2 text-xs text-neutral-500">
+                {inviteRole === 'editor' ? t('collaborationEditorDesc') : t('collaborationViewerDesc')}
+              </div>
             </div>
 
-            {/* Invite Link */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Invite Link
-              </label>
+              <div className="text-xs text-neutral-500 mb-2">{t('collaborationInviteLink')}</div>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={inviteLink}
                   readOnly
-                  placeholder="Click to generate link..."
-                  className="flex-1 px-3 py-2 text-sm border rounded bg-gray-50 dark:bg-gray-700 truncate"
+                  placeholder={t('collaborationGenerateLink')}
+                  className="flex-1 px-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-blue-500 text-sm"
                 />
                 <button
                   onClick={copyInviteLink}
-                  className={`px-4 py-2 rounded text-sm font-medium ${
-                    copied
-                      ? 'bg-green-500 text-white'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
+                    copied ? 'bg-emerald-500 text-black' : 'bg-white text-black hover:bg-neutral-200'
                   }`}
                 >
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? t('collaborationCopied') : t('collaborationCopy')}
                 </button>
               </div>
             </div>
 
-            {/* Share Options */}
             <div className="flex gap-2">
               <button
                 onClick={shareInvite}
-                className="flex-1 py-2 px-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 hover:bg-black/50 flex items-center justify-center gap-2 text-sm font-medium"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share
+                <Share2 size={16} />
+                {t('collaborationShare')}
               </button>
             </div>
 
-            {/* QR Code hint */}
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Anyone with this link can join as <strong>{inviteRole}</strong>
-              </p>
+            <div className="border-t border-neutral-800 pt-4">
+              <div className="text-xs text-neutral-500 text-center">
+                {t('collaborationAnyoneCanJoinAs').replace('{role}', inviteRole === 'editor' ? t('collaborationRoleEditor') : t('collaborationRoleViewer'))}
+              </div>
             </div>
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

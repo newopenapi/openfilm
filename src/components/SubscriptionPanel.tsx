@@ -7,12 +7,13 @@ import { apiRequest } from '../services/authService';
 interface SubscriptionPlan {
   id: number;
   name: string;
-  displayName: string;
-  description: string;
+  code?: string;
+  displayName?: string;
+  description?: string;
   price: number;
-  credits: number;
-  billingPeriod: string;
-  features: string[];
+  monthly_credits?: number;
+  billing_cycle?: string;
+  features?: any;
 }
 
 interface SubscriptionInfo {
@@ -29,15 +30,16 @@ interface CreditTransaction {
   type: string;
   credits: number;
   description: string;
-  balanceAfter: number;
-  createdAt: string;
+  balance_after?: number;
+  created_at?: string;
 }
 
-export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+export const SubscriptionPanel: React.FC<{ onClose?: () => void; mode?: 'modal' | 'embedded' }> = ({ onClose, mode = 'modal' }) => {
   const [activeTab, setActiveTab] = useState<'plans' | 'credits' | 'history'>('plans');
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [history, setHistory] = useState<CreditTransaction[]>([]);
+  const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,14 +51,16 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
     try {
       // 并行加载所有数据
       const [plansRes, subRes, historyRes] = await Promise.all([
-        apiRequest('/api/subscription/plans'),
-        apiRequest('/api/subscription/current'),
-        apiRequest('/api/subscription/history')
+        apiRequest('/subscription/plans'),
+        apiRequest('/subscription/current'),
+        apiRequest('/subscription/history')
       ]);
+      const creditsRes: any = await apiRequest('/user/credits');
 
       if (plansRes.plans) setPlans(plansRes.plans);
       if (subRes.subscription) setSubscription(subRes.subscription);
       if (historyRes.history) setHistory(historyRes.history);
+      if (typeof creditsRes?.data?.balance === 'number') setBalance(creditsRes.data.balance);
     } catch (error) {
       console.error('Failed to load subscription data:', error);
     } finally {
@@ -66,9 +70,9 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
 
   const handleSubscribe = async (planName: string) => {
     try {
-      await apiRequest('/api/subscription/update', {
+      await apiRequest('/subscription/update', {
         method: 'POST',
-        body: { planName }
+        body: JSON.stringify({ planName })
       });
       alert(`Successfully subscribed to ${planName}!`);
       loadData();
@@ -82,9 +86,9 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
     if (!amount) return;
     
     try {
-      await apiRequest('/api/subscription/purchase', {
+      await apiRequest('/subscription/purchase', {
         method: 'POST',
-        body: { amount: parseInt(amount) }
+        body: JSON.stringify({ amount: parseInt(amount) })
       });
       alert(`Successfully purchased ${amount} credits!`);
       loadData();
@@ -109,8 +113,15 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
   };
 
   if (loading) {
+    if (mode === 'embedded') {
+      return (
+        <div className="p-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+        </div>
+      );
+    }
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-center mt-4 text-gray-600">Loading...</p>
@@ -119,56 +130,9 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
     );
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Subscription & Credits</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setActiveTab('plans')}
-            className={`flex-1 py-3 font-medium transition-colors ${
-              activeTab === 'plans' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Plans
-          </button>
-          <button
-            onClick={() => setActiveTab('credits')}
-            className={`flex-1 py-3 font-medium transition-colors ${
-              activeTab === 'credits' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            My Credits
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex-1 py-3 font-medium transition-colors ${
-              activeTab === 'history' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            History
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'plans' && (
+  const body = (
+    <div className="flex-1 overflow-y-auto p-6">
+      {activeTab === 'plans' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {plans.map((plan) => (
                 <div
@@ -184,17 +148,20 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
                       Current Plan
                     </span>
                   )}
-                  <h3 className="text-lg font-bold text-gray-800">{plan.displayName}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{plan.description}</p>
+                  <h3 className="text-lg font-bold text-gray-800">{plan.displayName || plan.name}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{plan.description || plan.code}</p>
                   <div className="mt-4">
                     <span className="text-3xl font-bold text-gray-900">¥{plan.price}</span>
-                    <span className="text-gray-500">/{plan.billingPeriod === 'monthly' ? '月' : '年'}</span>
+                    <span className="text-gray-500">/{plan.billing_cycle === 'monthly' ? '月' : plan.billing_cycle === 'yearly' ? '年' : ''}</span>
                   </div>
                   <div className="mt-2 text-sm text-blue-600 font-medium">
-                    {plan.credits} 积分/月
+                    {plan.monthly_credits || 0} 积分/月
                   </div>
                   <ul className="mt-4 space-y-2">
-                    {plan.features.map((feature, idx) => (
+                    {(Array.isArray(plan.features)
+                      ? plan.features
+                      : Object.entries(plan.features || {}).map(([k, v]) => `${k}: ${v}`))
+                      .map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
                         <svg className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -204,7 +171,7 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
                     ))}
                   </ul>
                   <button
-                    onClick={() => handleSubscribe(plan.name)}
+                    onClick={() => handleSubscribe(plan.code || plan.name)}
                     disabled={subscription?.plan.name === plan.name}
                     className={`w-full mt-4 py-2 rounded-lg font-medium transition-colors ${
                       subscription?.plan.name === plan.name
@@ -217,15 +184,15 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
                 </div>
               ))}
             </div>
-          )}
+      )}
 
-          {activeTab === 'credits' && subscription && (
+      {activeTab === 'credits' && subscription && (
             <div className="space-y-6">
               {/* 积分概览卡片 */}
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white">
                 <h3 className="text-lg font-medium opacity-90">Current Balance</h3>
                 <div className="text-4xl font-bold mt-2">
-                  {subscription.creditsRemaining} <span className="text-lg font-normal opacity-80">credits</span>
+                  {(balance ?? subscription.creditsRemaining)} <span className="text-lg font-normal opacity-80">credits</span>
                 </div>
                 <p className="text-sm opacity-80 mt-1">
                   {subscription.creditsUsed} used of {subscription.creditsTotal} this month
@@ -265,7 +232,7 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Plan:</span>
-                    <span className="ml-2 font-medium text-gray-700 dark:text-gray-300">{subscription.plan.displayName}</span>
+                    <span className="ml-2 font-medium text-gray-700 dark:text-gray-300">{subscription.plan.displayName || subscription.plan.name}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">Status:</span>
@@ -284,9 +251,9 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
                 </div>
               </div>
             </div>
-          )}
+      )}
 
-          {activeTab === 'history' && (
+      {activeTab === 'history' && (
             <div className="space-y-3">
               {history.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">No transaction history</p>
@@ -307,7 +274,7 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
                       <div>
                         <p className="font-medium text-gray-800 dark:text-white">{tx.description}</p>
                         <p className="text-sm text-gray-500">
-                          {new Date(tx.createdAt).toLocaleString()}
+                          {new Date((tx.created_at as any) || (tx as any).createdAt).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -320,8 +287,76 @@ export const SubscriptionPanel: React.FC<{ onClose?: () => void }> = ({ onClose 
                 ))
               )}
             </div>
-          )}
+      )}
+    </div>
+  );
+
+  const tabs = (
+    <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <button
+        onClick={() => setActiveTab('plans')}
+        className={`flex-1 py-3 font-medium transition-colors ${
+          activeTab === 'plans'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        {mode === 'embedded' ? '套餐' : 'Plans'}
+      </button>
+      <button
+        onClick={() => setActiveTab('credits')}
+        className={`flex-1 py-3 font-medium transition-colors ${
+          activeTab === 'credits'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        {mode === 'embedded' ? '积分' : 'My Credits'}
+      </button>
+      <button
+        onClick={() => setActiveTab('history')}
+        className={`flex-1 py-3 font-medium transition-colors ${
+          activeTab === 'history'
+            ? 'text-blue-600 border-b-2 border-blue-600'
+            : 'text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        {mode === 'embedded' ? '流水' : 'History'}
+      </button>
+    </div>
+  );
+
+  if (mode === 'embedded') {
+    return (
+      <div className="w-full overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="text-sm font-semibold text-gray-800 dark:text-white">账户管理</div>
+          <button
+            onClick={onClose}
+            className="px-3 py-1 text-xs rounded border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            返回
+          </button>
         </div>
+        {tabs}
+        <div className="max-h-[520px] overflow-y-auto">{body}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000]">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Subscription & Credits</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {tabs}
+        {body}
       </div>
     </div>
   );

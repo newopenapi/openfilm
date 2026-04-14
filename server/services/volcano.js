@@ -115,7 +115,10 @@ async function pollVolcanoVideoTask(taskId, baseUrl, apiKey, maxWaitMs = 600000)
             }
             return videoUrl;
         } else if (status === 'failed') {
-            const errorMsg = result.error || result.message || 'Unknown error';
+            let errorMsg = result.error ?? result.message ?? 'Unknown error';
+            if (typeof errorMsg === 'object' && errorMsg) {
+                errorMsg = errorMsg.message || errorMsg.code || JSON.stringify(errorMsg);
+            }
             throw new Error(`Volcano generation failed: ${errorMsg}`);
         }
 
@@ -144,6 +147,7 @@ export async function generateVolcanoVideo({
     prompt,
     imageBase64,
     lastFrameBase64,
+    styleReferenceBase64,
     modelId,
     aspectRatio,
     resolution,
@@ -174,44 +178,53 @@ export async function generateVolcanoVideo({
         });
     }
 
-    // Add first frame image (reference_image for I2V)
-    if (imageBase64) {
-        const rawBase64 = extractRawBase64(imageBase64) || imageBase64;
-        // Check if it's a URL or base64
-        if (imageBase64.startsWith('http://') || imageBase64.startsWith('https://')) {
+    // Helper function to add image to content array
+    const addImageToContent = (base64Data, role) => {
+        if (!base64Data) return;
+        const rawBase64 = extractRawBase64(base64Data) || base64Data;
+        if (base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
             content.push({
                 type: 'image_url',
-                image_url: { url: imageBase64 },
-                role: 'reference_image'
+                image_url: { url: base64Data },
+                role: role
             });
         } else {
-            // Base64 data
-            const mimeType = imageBase64.includes('image/jpeg') ? 'image/jpeg' : 'image/png';
+            const mimeType = base64Data.includes('image/jpeg') ? 'image/jpeg' : 'image/png';
             content.push({
                 type: 'image_url',
                 image_url: { url: `data:${mimeType};base64,${rawBase64}` },
-                role: 'reference_image'
+                role: role
             });
         }
-    }
+    };
 
-    // Add last frame image (end_frame_image for FL2V)
-    if (lastFrameBase64) {
-        const rawBase64 = extractRawBase64(lastFrameBase64) || lastFrameBase64;
-        if (lastFrameBase64.startsWith('http://') || lastFrameBase64.startsWith('https://')) {
-            content.push({
-                type: 'image_url',
-                image_url: { url: lastFrameBase64 },
-                role: 'end_frame_image'
-            });
-        } else {
-            const mimeType = lastFrameBase64.includes('image/jpeg') ? 'image/jpeg' : 'image/png';
-            content.push({
-                type: 'image_url',
-                image_url: { url: `data:${mimeType};base64,${rawBase64}` },
-                role: 'end_frame_image'
-            });
-        }
+    // Add images with appropriate roles based on what is provided
+    // IMPORTANT: Volcano API has strict rules for image roles:
+    // - reference_image: First frame for image-to-video (I2V)
+    // - end_frame_image: End frame for frame-to-video (FL2V)
+    // - style_reference_image: Style reference (multimodal)
+    // 
+    // The API only accepts ONE primary image type (reference_image OR end_frame_image)
+    // NOT both in the same request
+    
+    // Determine the video generation mode based on available images
+    const hasFirstFrame = !!imageBase64;
+    const hasEndFrame = !!lastFrameBase64;
+    const hasStyleRef = !!styleReferenceBase64;
+    
+    // Add style reference image first (always allowed, doesn't conflict)
+    if (hasStyleRef) {
+        addImageToContent(styleReferenceBase64, 'style_reference_image');
+    }
+    
+    // Handle first/end frame - use FIRST frame if available, ignore end frame
+    // This matches standard image-to-video behavior
+    if (hasFirstFrame) {
+        // Image-to-video mode: use reference_image
+        addImageToContent(imageBase64, 'reference_image');
+    } else if (hasEndFrame) {
+        // End frame mode: use end_frame_image
+        addImageToContent(lastFrameBase64, 'end_frame_image');
     }
 
     // Build request body
@@ -252,6 +265,7 @@ export async function generateVolcanoVideo({
     console.log('Base URL:', baseUrl);
     console.log('Has first frame:', !!imageBase64);
     console.log('Has last frame:', !!lastFrameBase64);
+    console.log('Has style reference:', !!styleReferenceBase64);
     console.log('Duration:', mappedDuration);
     console.log('Ratio:', body.ratio);
     console.log('Prompt:', (prompt || '').substring(0, 100) + '...');

@@ -38,7 +38,7 @@ router.get('/me', authenticate, async (req, res) => {
 /**
  * 更新当前用户信息
  */
-router.put('/me', async (req, res) => {
+router.put('/me', authenticate, async (req, res) => {
   try {
     const { username, avatar_url } = req.body;
     
@@ -72,7 +72,7 @@ router.put('/me', async (req, res) => {
 /**
  * 修改密码
  */
-router.put('/password', async (req, res) => {
+router.put('/password', authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     

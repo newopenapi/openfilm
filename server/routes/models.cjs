@@ -4,7 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { AIModel, ModelPricing, User } = require('../models/index.cjs');
+const { AIModel, ModelPricing, User, PaymentLog } = require('../models/index.cjs');
 const { adminOnly } = require('../middleware/admin.cjs');
 
 // 应用管理员权限中间件

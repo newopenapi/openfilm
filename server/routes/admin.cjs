@@ -512,4 +512,164 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+/**
+ * 获取 AI 模型列表（带定价）
+ */
+router.get('/models', [
+  query('page').optional().isInt({ min: 1 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  query('provider').optional().isString(),
+  query('type').optional().isIn(['image', 'video', 'chat'])
+], async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const offset = (page - 1) * limit;
+
+    const where = {};
+    if (req.query.provider) where.provider = req.query.provider;
+    if (req.query.type) where.type = req.query.type;
+
+    const { count, rows } = await AIModel.findAndCountAll({
+      where,
+      limit,
+      offset,
+      order: [['provider', 'ASC'], ['sort_order', 'ASC']],
+    });
+
+    res.json({
+      success: true,
+      data: {
+        models: rows,
+        pagination: {
+          total: count,
+          page,
+          limit,
+          totalPages: Math.ceil(count / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('获取模型列表错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取模型列表失败'
+    });
+  }
+});
+
+/**
+ * 创建 AI 模型
+ */
+router.post('/models', [
+  body('model_id').notEmpty().withMessage('模型ID不能为空'),
+  body('name').notEmpty().withMessage('模型名称不能为空'),
+  body('provider').notEmpty().withMessage('提供商不能为空'),
+  body('type').notEmpty().isIn(['image', 'video', 'chat']).withMessage('类型必须是 image/video/chat'),
+  body('credits_per_call').isInt({ min: 0 }).withMessage('积分必须大于等于0'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: errors.array()[0].msg
+      });
+    }
+
+    const [model, created] = await AIModel.findOrCreate({
+      where: { model_id: req.body.model_id },
+      defaults: {
+        ...req.body,
+        status: req.body.status || 'active',
+        sort_order: req.body.sort_order || 0,
+      }
+    });
+
+    if (!created) {
+      return res.status(400).json({
+        success: false,
+        message: '模型ID已存在'
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: '模型创建成功',
+      data: { model }
+    });
+  } catch (error) {
+    console.error('创建模型错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '创建模型失败'
+    });
+  }
+});
+
+/**
+ * 更新 AI 模型
+ */
+router.put('/models/:id', async (req, res) => {
+  try {
+    const model = await AIModel.findByPk(req.params.id);
+    if (!model) {
+      return res.status(404).json({
+        success: false,
+        message: '模型不存在'
+      });
+    }
+
+    await model.update({
+      name: req.body.name,
+      provider: req.body.provider,
+      type: req.body.type,
+      credits_per_call: req.body.credits_per_call,
+      status: req.body.status,
+      sort_order: req.body.sort_order,
+      description: req.body.description,
+    });
+
+    res.json({
+      success: true,
+      message: '模型更新成功',
+      data: { model }
+    });
+  } catch (error) {
+    console.error('更新模型错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新模型失败'
+    });
+  }
+});
+
+/**
+ * 删除 AI 模型
+ */
+router.delete('/models/:id', async (req, res) => {
+  try {
+    const model = await AIModel.findByPk(req.params.id);
+    if (!model) {
+      return res.status(404).json({
+        success: false,
+        message: '模型不存在'
+      });
+    }
+
+    await model.destroy();
+
+    res.json({
+      success: true,
+      message: '模型删除成功'
+    });
+  } catch (error) {
+    console.error('删除模型错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '删除模型失败'
+    });
+  }
+});
+
 module.exports = router;

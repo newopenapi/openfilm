@@ -3,11 +3,14 @@
  * 
  * Routes for AI image and video generation.
  * Supports Gemini, Veo, Kling AI, Hailuo AI, and OpenAI GPT Image providers.
+ * Includes credit deduction for billing.
  */
 
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { spawnSync } from 'child_process';
 import { generateKlingVideo, generateKlingImage, generateKlingMultiImage } from '../services/kling.js';
 import { generateGeminiImage, generateVeoVideo } from '../services/gemini.js';
 import { generateHailuoVideo } from '../services/hailuo.js';
@@ -16,6 +19,9 @@ import { generateVolcanoVideo } from '../services/volcano.js';
 import { generateNanoBananaImage } from '../services/nanobanana.js';
 import { generateDoubaoImage } from '../services/doubao.js';
 import { resolveImageToBase64, saveBufferToFile } from '../utils/imageHelpers.js';
+import { User, CreditTransaction, AIModel } from '../models/index.cjs';
+import { getRequiredCreditsForModel } from '../services/billing.js';
+import { authenticateToken } from '../middleware/auth.cjs';
 
 const router = express.Router();
 
@@ -23,10 +29,37 @@ const router = express.Router();
 // IMAGE GENERATION
 // ============================================================================
 
-router.post('/generate-image', async (req, res) => {
+router.post('/generate-image', authenticateToken, async (req, res) => {
     try {
         const { nodeId, prompt, aspectRatio, resolution, imageBase64: rawImageBase64, imageModel, klingReferenceMode, klingFaceIntensity, klingSubjectIntensity } = req.body;
         const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, OPENAI_API_KEY, OPENAI_BASE_URL, NANOBANANA_API_KEY, NANOBANANA_BASE_URL, VOLCANO_API_KEY, VOLCANO_BASE_URL, IMAGES_DIR } = req.app.locals;
+
+        // === BILLING CHECK & DEDUCT ===
+        // Get user from token
+        const userId = req.user.id;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(401).json({ error: 'User not found' });
+        }
+
+        // Get required credits for this model
+        let requiredCredits = 1;
+        try {
+            requiredCredits = await getRequiredCreditsForModel(imageModel);
+        } catch (err) {
+            // If model not found in database, default to 1 credit
+            console.log(`[Billing] Model ${imageModel} not found in AIModel table, using default 1 credit`);
+            requiredCredits = 1;
+        }
+
+        // Check balance
+        if (user.balance < requiredCredits) {
+            return res.status(402).json({ 
+                error: `Insufficient balance. Required: ${requiredCredits} credits, your balance: ${user.balance}`,
+                required: requiredCredits,
+                balance: user.balance
+            });
+        }
 
         // Determine provider
         const isKlingModel = imageModel && imageModel.startsWith('kling-');
@@ -38,7 +71,19 @@ router.post('/generate-image', async (req, res) => {
         let imageBuffer;
         let imageFormat = 'png';
 
-        if (isKlingModel) {
+        if (process.env.MOCK_GENERATION === '1') {
+            const { default: sharp } = await import('sharp');
+            imageBuffer = await sharp({
+                create: {
+                    width: 1024,
+                    height: 1024,
+                    channels: 4,
+                    background: { r: 20, g: 20, b: 30, alpha: 1 }
+                }
+            })
+                .png()
+                .toBuffer();
+        } else if (isKlingModel) {
             // --- KLING AI IMAGE GENERATION ---
             if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
                 return res.status(500).json({
@@ -256,10 +301,40 @@ router.post('/generate-image', async (req, res) => {
         fs.writeFileSync(path.join(IMAGES_DIR, `${metadataId}.json`), JSON.stringify(metadata, null, 2));
 
         console.log(`Image saved: ${saved.url} (model: ${imageModel || 'gemini-pro'})`);
+
+        await User.sequelize.transaction(async (t) => {
+            const lockedUser = await User.findByPk(userId, { transaction: t, lock: t.LOCK.UPDATE });
+            if (!lockedUser) {
+                throw new Error('User not found');
+            }
+            const balanceBefore = lockedUser.balance;
+            if (balanceBefore < requiredCredits) {
+                const err = new Error(`Insufficient balance. Required: ${requiredCredits} credits, your balance: ${balanceBefore}`);
+                err.statusCode = 402;
+                throw err;
+            }
+            const balanceAfter = balanceBefore - requiredCredits;
+            await lockedUser.update({ balance: balanceAfter }, { transaction: t });
+            await CreditTransaction.create({
+                user_id: userId,
+                type: 'generation',
+                credits: -requiredCredits,
+                balance_before: balanceBefore,
+                balance_after: balanceAfter,
+                reference_id: metadataId,
+                description: `Image generation - ${imageModel || 'gemini'}`
+            }, { transaction: t });
+        });
+
+        console.log(`[Billing] Deducted ${requiredCredits} credits from user ${userId} for image generation (${imageModel})`);
+
         return res.json({ resultUrl: saved.url });
 
     } catch (error) {
         console.error("Server Image Gen Error:", error);
+        if (error?.statusCode) {
+            return res.status(error.statusCode).json({ error: error.message });
+        }
         res.status(500).json({ error: error.message || "Image generation failed" });
     }
 });
@@ -268,15 +343,48 @@ router.post('/generate-image', async (req, res) => {
 // VIDEO GENERATION
 // ============================================================================
 
-router.post('/generate-video', async (req, res) => {
+router.post('/generate-video', authenticateToken, async (req, res) => {
     try {
-        const { nodeId, prompt, imageBase64: rawImageBase64, lastFrameBase64: rawLastFrameBase64, motionReferenceUrl: rawMotionReferenceUrl, aspectRatio, resolution, duration, videoModel, seed, cameraFixed, generateAudio, watermark, returnLastFrame } = req.body;
+        const { nodeId, prompt, imageBase64: rawImageBase64, lastFrameBase64: rawLastFrameBase64, styleReferenceBase64: rawStyleReferenceBase64, referenceImageBase64: rawReferenceImageBase64, endFrameImageBase64: rawEndFrameImageBase64, motionReferenceUrl: rawMotionReferenceUrl, aspectRatio, resolution, duration, videoModel, seed, cameraFixed, generateAudio, watermark, returnLastFrame } = req.body;
         const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, HAILUO_API_KEY, HAILUO_BASE_URL, FAL_API_KEY, FAL_BASE_URL, VOLCANO_API_KEY, VOLCANO_BASE_URL, VIDEOS_DIR } = req.app.locals;
+
+        // === BILLING CHECK & DEDUCT ===
+        // Get user from token
+        const userId = req.user.id;
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(401).json({ error: 'User not found' });
+        }
+
+        // Get required credits for this model
+        let requiredCredits = 3;
+        try {
+            requiredCredits = await getRequiredCreditsForModel(videoModel);
+        } catch (err) {
+            // If model not found in database, use default 3 credits for video
+            console.log(`[Billing] Model ${videoModel} not found in AIModel table, using default 3 credits`);
+            requiredCredits = 3;
+        }
+
+        // Check balance
+        if (user.balance < requiredCredits) {
+            return res.status(402).json({ 
+                error: `Insufficient balance. Required: ${requiredCredits} credits, your balance: ${user.balance}`,
+                required: requiredCredits,
+                balance: user.balance
+            });
+        }
+
+        // Resolve file URLs to base64
 
         // Resolve file URLs to base64
         const imageBase64 = resolveImageToBase64(rawImageBase64);
         const lastFrameBase64 = resolveImageToBase64(rawLastFrameBase64);
+        const styleReferenceBase64 = resolveImageToBase64(rawStyleReferenceBase64);
         const motionReferenceUrl = resolveImageToBase64(rawMotionReferenceUrl);
+        // Seedance 2.0 first frame and end frame
+        const referenceImageBase64 = resolveImageToBase64(rawReferenceImageBase64);
+        const endFrameImageBase64 = resolveImageToBase64(rawEndFrameImageBase64);
 
         // Determine provider
         const isKlingModel = videoModel && videoModel.startsWith('kling-');
@@ -285,7 +393,26 @@ router.post('/generate-video', async (req, res) => {
 
         let videoBuffer;
 
-        if (isVolcanoModel) {
+        if (process.env.MOCK_GENERATION === '1') {
+            const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'openfilm-mock-'));
+            const outPath = path.join(tmpDir, 'mock.mp4');
+            const ff = spawnSync('ffmpeg', [
+                '-y',
+                '-f', 'lavfi',
+                '-i', 'color=c=black:s=1280x720:r=30:d=1',
+                '-f', 'lavfi',
+                '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
+                '-shortest',
+                '-c:v', 'libx264',
+                '-pix_fmt', 'yuv420p',
+                '-c:a', 'aac',
+                outPath
+            ], { stdio: 'ignore' });
+            if (ff.status !== 0 || !fs.existsSync(outPath)) {
+                throw new Error('Mock video generation failed');
+            }
+            videoBuffer = fs.readFileSync(outPath);
+        } else if (isVolcanoModel) {
             // --- VOLCANO ENGINE (SEEDANCE) VIDEO GENERATION ---
             if (!VOLCANO_API_KEY) {
                 return res.status(500).json({
@@ -295,10 +422,15 @@ router.post('/generate-video', async (req, res) => {
 
             console.log(`Using Volcano/Seedance model: ${videoModel}, duration: ${duration || 5}s`);
 
+            // Use explicit reference/end frame if provided, otherwise fall back to imageBase64/lastFrameBase64
+            const firstFrameBase64 = referenceImageBase64 || imageBase64;
+            const endFrameBase64 = endFrameImageBase64 || lastFrameBase64;
+
             const volcanoVideoUrl = await generateVolcanoVideo({
                 prompt,
-                imageBase64,
-                lastFrameBase64,
+                imageBase64: firstFrameBase64,
+                lastFrameBase64: endFrameBase64,
+                styleReferenceBase64,
                 modelId: videoModel,
                 aspectRatio,
                 resolution,
@@ -474,10 +606,39 @@ router.post('/generate-video', async (req, res) => {
         fs.writeFileSync(path.join(VIDEOS_DIR, `${metadataId}.json`), JSON.stringify(metadata, null, 2));
 
         console.log(`Video saved: ${saved.url} (model: ${videoModel || 'veo-3.1'})`);
+
+        await User.sequelize.transaction(async (t) => {
+            const lockedUser = await User.findByPk(userId, { transaction: t, lock: t.LOCK.UPDATE });
+            if (!lockedUser) {
+                throw new Error('User not found');
+            }
+            const balanceBefore = lockedUser.balance;
+            if (balanceBefore < requiredCredits) {
+                const err = new Error(`Insufficient balance. Required: ${requiredCredits} credits, your balance: ${balanceBefore}`);
+                err.statusCode = 402;
+                throw err;
+            }
+            const balanceAfter = balanceBefore - requiredCredits;
+            await lockedUser.update({ balance: balanceAfter }, { transaction: t });
+            await CreditTransaction.create({
+                user_id: userId,
+                type: 'generation',
+                credits: -requiredCredits,
+                balance_before: balanceBefore,
+                balance_after: balanceAfter,
+                reference_id: metadataId,
+                description: `Video generation - ${videoModel || 'veo'}`
+            }, { transaction: t });
+        });
+
+        console.log(`[Billing] Deducted ${requiredCredits} credits from user ${userId} for video generation (${videoModel})`);
         return res.json({ resultUrl: saved.url });
 
     } catch (error) {
         console.error("Server Video Gen Error:", error);
+        if (error?.statusCode) {
+            return res.status(error.statusCode).json({ error: error.message });
+        }
         res.status(500).json({ error: error.message || "Video generation failed" });
     }
 });

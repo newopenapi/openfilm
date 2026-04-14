@@ -30,13 +30,16 @@ function extractRawBase64(dataUrl) {
 
 /**
  * Map frontend model ID to Doubao API model name for image generation
+ * 根据火山方舟官方文档: https://www.volcengine.com/docs/82379/1824121
  */
 function mapImageModelName(modelId) {
     const mapping = {
-        'seedream-5.0': 'doubao-seedream-5-0-lite-260415',
+        'seedream-5.0': 'doubao-seedream-5-0-260415',
+        'seedream-5.0-lite': 'doubao-seedream-5-0-lite-260415',
         'seedream-4.6': 'doubao-seedream-4-6-250522',
         'seedream-4.5': 'doubao-seedream-4-5-251128',
-        'seedream-4.0': 'doubao-seedream-4-0'
+        'seedream-4.0': 'doubao-seedream-4-0',
+        'seedream-3.0': 'doubao-seedream-3-0'
     };
     return mapping[modelId] || 'doubao-seedream-5-0-lite-260415';
 }
@@ -171,24 +174,36 @@ export async function generateDoubaoImage({
 
 /**
  * Map frontend model ID to Doubao API model name for chat
+ * 根据火山方舟官方文档: https://www.volcengine.com/docs/82379/1399009
  */
 function mapChatModelName(modelId) {
     const mapping = {
-        // Doubao 2.0 Pro series
+        // Doubao 系列
+        'doubao-pro-32k': 'doubao-pro-32k',
+        'doubao-pro-128k': 'doubao-pro-128k',
+        'doubao-pro-256k': 'doubao-pro-256k',
+        'doubao-lite-32k': 'doubao-lite-32k',
+        'doubao-lite-128k': 'doubao-lite-128k',
+        // Doubao 2.0 系列
         'doubao-2.0-pro': 'doubao-pro-32k',
         'doubao-2.0-pro-128k': 'doubao-pro-128k',
         'doubao-2.0-pro-256k': 'doubao-pro-256k',
-        // Doubao 2.0 Lite series
         'doubao-2.0-lite': 'doubao-lite-32k',
         'doubao-2.0-lite-128k': 'doubao-lite-128k',
-        // Doubao Seed series (reasoning models)
-        'doubao-seed-2.0-pro': 'doubao-seed-2.0-pro',
-        'doubao-seed-2.0-code': 'doubao-seed-2.0-code',
+        // Doubao Seed 系列 (推理模型)
+        'doubao-seed-1.0': 'doubao-seed-1-0',
+        'doubao-seed-2.0': 'doubao-seed-2-0',
+        'doubao-seed-2.0-pro': 'doubao-seed-2-0-pro',
+        'doubao-seed-2.0-code': 'doubao-seed-2-0-code',
         // Legacy
         'doubao-pro': 'doubao-pro-32k',
         'doubao-lite': 'doubao-lite-32k'
     };
-    return mapping[modelId] || modelId || 'doubao-pro-32k';
+    // If already matches the API format (like 'doubao-pro-32k'), use directly
+    if (mapping[modelId]) {
+        return mapping[modelId];
+    }
+    return modelId || 'doubao-pro-32k';
 }
 
 /**

@@ -1,135 +1,184 @@
-# AI Film - Multi-User Edition
+# AI Film（多用户版）
 
-A collaborative AI video and image generation platform with multi-user support.
+一个支持多用户、实时协作的 AI 图片/视频生成平台（含项目管理、素材库、订阅与积分系统）。
 
-## Features
+## 主要功能
 
-- 🤖 AI Image Generation (Multiple providers: Kling, Hailuo, OpenAI, Volcano, etc.)
-- 🎬 AI Video Generation
-- 📝 Storyboard Generation
-- 👥 Multi-user System with Roles
-- 💳 Subscription & Credits System
-- 🔄 Real-time Collaboration (Socket.io)
-- 📁 Project & Asset Management
-- ☁️ Cloud Storage (Tencent COS)
+- AI 图片生成（多提供方：Kling / Hailuo / OpenAI / Volcano 等）
+- AI 视频生成
+- 分镜脚本生成（Storyboard）
+- 多用户系统与角色权限
+- 订阅套餐与积分体系
+- 实时协作（Socket.IO）
+- 项目与素材管理
+- 云存储（腾讯 COS）
 
-## Quick Start
+## 本地开发（Quick Start）
 
-### Prerequisites
+### 环境要求
 
 - Node.js 18+
 - MySQL 8.0+
-- Redis 6.0+
-- npm or yarn
+- Redis 6.0+（按需）
+- npm
 
-### Installation
+### 安装与启动
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Copy environment file:
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Configure your `.env` file with database credentials and API keys
-
-5. Start the servers:
-   ```bash
-   # Terminal 1: Start backend
-   node server/index.js
-   
-   # Terminal 2: Start frontend (in another terminal)
-   npm run dev
-   ```
-
-6. Access the app at http://localhost:5173
-
-## Docker Deployment
-
-### Development
+1. 安装依赖
 
 ```bash
-docker-compose up
+npm install
 ```
 
-### Production
+2. 配置环境变量
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+cp .env.example .env
 ```
 
-## Default Credentials
+按需填写 `.env` 中的数据库与各类 AI/存储/支付密钥。
 
-- **Admin Panel**: http://localhost:5173/admin
-- **Username**: admin
-- **Password**: admin123
+3. 启动开发环境
 
-## API Documentation
-
-### Authentication
-
-```
-POST /api/auth/register - Register new user
-POST /api/auth/login    - Login user
-GET  /api/auth/me       - Get current user
+```bash
+npm run dev
 ```
 
-### Projects
+默认前端地址：http://localhost:5173
+
+### 默认账号
+
+- 管理后台：http://localhost:5173/admin
+- 用户名：admin
+- 密码：admin123
+
+## 线上部署（Deployment）
+
+项目默认是“单体部署”：后端 Node 进程同时提供 API 与前端静态页面（生产环境会托管 `dist/`）。
+
+### 方案 A：单体部署（推荐）
+
+1. 准备 `.env`
+
+参考 [.env.example](file:///Users/sky/aifilm/.env.example)，生产环境至少建议配置：
+
+- `NODE_ENV=production`
+- `JWT_SECRET=...`（必配）
+- `DATABASE_URL=...`（或 DB_HOST/DB_USER/DB_PASSWORD/DB_NAME）
+- `CORS_ORIGIN=https://你的域名`
+- `VITE_API_BASE_URL=/api`（前端请求基址）
+- `VITE_API_URL=https://你的域名`（Socket 连接基址）
+
+支付（可选，启用微信/支付宝）：
+
+- `PAYMENTS_MODE=mock|live`
+- `PUBLIC_API_BASE_URL=https://你的域名`（支付回调必须公网可达）
+- 支付宝：`ALIPAY_APP_ID / ALIPAY_PRIVATE_KEY / ALIPAY_PUBLIC_KEY`
+- 微信：`WECHATPAY_MCH_ID / WECHATPAY_APP_ID / WECHATPAY_CERT_SERIAL / WECHATPAY_PRIVATE_KEY / WECHATPAY_API_V3_KEY / WECHATPAY_PLATFORM_PUBLIC_KEY`
+
+2. 初始化数据库（首次一次性）
+
+```bash
+npm ci
+npm run db:init
+```
+
+3. 构建前端并启动服务
+
+```bash
+npm run build
+node server/index.js
+```
+
+后端默认监听 `3001` 端口。
+
+4. 反向代理与 HTTPS（Nginx/Caddy/SLB）
+
+- 将 `https://你的域名` 反代到 `http://127.0.0.1:3001`
+- 必须支持 WebSocket Upgrade（Socket.IO，路径通常是 `/socket.io/`）
+- 建议转发 `Host`、`X-Forwarded-Proto`、`X-Forwarded-Host`
+
+健康检查：
+
+- `GET https://你的域名/api/health`
+
+### 方案 B：Docker Compose
+
+仓库提供本地/线上一套 compose（app + mysql + redis）：[docker-compose.yml](file:///Users/sky/aifilm/docker-compose.yml)
+
+1. 启动
+
+```bash
+docker-compose up -d --build
+```
+
+2. 首次初始化数据库（只需一次）
+
+```bash
+docker exec -it openfilm-app sh -lc "npm run db:init"
+```
+
+3. 数据持久化
+
+容器会将 `./library` 挂载到 `/app/library` 用于持久化生成内容与项目文件。
+
+### 支付回调（线上必须配置）
+
+如启用微信/支付宝支付，必须保证回调地址公网可访问，并正确配置 `PUBLIC_API_BASE_URL`：
+
+- 支付宝回调：`POST /api/payments/notify/alipay`
+- 微信回调：`POST /api/payments/notify/wechat`
+
+## API（常用接口）
+
+### 认证
 
 ```
-GET    /api/projects        - List user's projects
-POST   /api/projects        - Create new project
-GET    /api/projects/:id    - Get project details
-PUT    /api/projects/:id    - Update project
-DELETE /api/projects/:id    - Delete project
+POST /api/auth/register  注册
+POST /api/auth/login     登录
+GET  /api/auth/me        获取当前用户
 ```
 
-### Subscriptions
+### 项目
 
 ```
-GET  /api/subscription/plans    - List available plans
-GET  /api/subscription/current  - Get current subscription
-POST /api/subscription/update   - Update subscription
-GET  /api/subscription/credits  - Get credits balance
-POST /api/subscription/purchase - Purchase credits
-GET  /api/subscription/history  - Transaction history
+GET    /api/projects         获取项目列表
+POST   /api/projects         创建项目
+GET    /api/projects/:id     获取项目详情
+PUT    /api/projects/:id     更新项目
+DELETE /api/projects/:id     删除项目
 ```
 
-### Assets
+### 订阅与积分
 
 ```
-GET  /api/assets        - List user assets
-GET  /api/assets/:id    - Get asset details
-PUT  /api/assets/:id    - Update asset
-DELETE /api/assets/:id  - Delete asset
-POST /api/assets/:id/favorite - Toggle favorite
+GET  /api/subscription/plans     套餐列表
+GET  /api/subscription/current   当前订阅
+GET  /api/subscription/credits   当前积分
+GET  /api/subscription/history   积分流水
+
+POST /api/payments/create        创建支付订单（订阅/充值）
+GET  /api/payments/:orderId      查询支付状态
 ```
 
-## Subscription Plans
+### 素材
 
-| Plan | Price | Credits/Month | Features |
-|------|-------|--------------|----------|
-| Free | ¥0 | 100 | Basic features |
-| Basic | ¥29 | 500 | HD images, 720p video |
-| Pro | ¥99 | 2000 | 4K, 1080p, Collaboration |
-| Enterprise | ¥299 | 10000 | Unlimited, API access |
+```
+GET    /api/assets               素材列表
+GET    /api/assets/:id           素材详情
+PUT    /api/assets/:id           更新素材
+DELETE /api/assets/:id           删除素材
+POST   /api/assets/:id/favorite  收藏/取消收藏
+```
 
-## Environment Variables
+## 订阅套餐（示例）
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| DATABASE_URL | MySQL connection string | Yes |
-| REDIS_URL | Redis connection string | Yes |
-| JWT_SECRET | JWT signing secret | Yes |
-| GEMINI_API_KEY | Google Gemini API key | Yes |
-| KLING_ACCESS_KEY | Kling AI access key | No |
-| KLING_SECRET_KEY | Kling AI secret key | No |
-| TENCENT_SECRET_ID | Tencent COS secret ID | No |
-| TENCENT_SECRET_KEY | Tencent COS secret key | No |
+| 套餐 | 价格 | 每月积分 | 说明 |
+|------|------|----------|------|
+| Free | ¥0 | 100 | 基础功能 |
+| Basic | ¥29 | 500 | 高清图片、720p 视频 |
+| Pro | ¥99 | 2000 | 4K、1080p、协作 |
+| Enterprise | ¥299 | 10000 | 更高额度、API 访问 |
 
 ## License
 

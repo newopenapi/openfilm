@@ -59,6 +59,19 @@ function initSocketIO(server) {
     // 广播用户上线
     io.emit('user:online', { userId, username: socket.user.username });
 
+      // 如果用户在同一浏览器/设备重复连接，只保留最新连接，避免同一用户出现多个在线计数
+      const socketSet = onlineUsers.get(userId);
+      if (socketSet && socketSet.size > 1) {
+        for (const sid of socketSet) {
+          if (sid !== socket.id) {
+            const s = io.sockets.sockets.get(sid);
+            if (s) {
+              s.disconnect(true);
+            }
+          }
+        }
+      }
+
     // 加入项目房间
     socket.on('project:join', async (projectId) => {
       try {

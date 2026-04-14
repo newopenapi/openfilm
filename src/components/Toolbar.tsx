@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   LayoutGrid,
+  Folder,
   Image as ImageIcon,
   MessageSquare,
   History,
@@ -8,7 +9,13 @@ import {
   MoreHorizontal,
   Plus,
   Film,
-  Users
+  Users,
+  User,
+  Bell,
+  Home,
+  Settings,
+  HelpCircle,
+  LogOut
 } from 'lucide-react';
 import { t } from '../i18n';
 
@@ -35,11 +42,18 @@ const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20
 interface ToolbarProps {
   onAddClick?: (e: React.MouseEvent) => void;
   onWorkflowsClick?: (e: React.MouseEvent) => void;
+  onProjectsClick?: (e: React.MouseEvent) => void;
   onHistoryClick?: (e: React.MouseEvent) => void;
   onAssetsClick?: (e: React.MouseEvent) => void;
   onTikTokClick?: (e: React.MouseEvent) => void;
   onStoryboardClick?: (e: React.MouseEvent) => void;
   onCollaborationClick?: (e: React.MouseEvent) => void;
+  onOpenAuth?: () => void;
+  onOpenAdmin?: () => void;
+  onOpenAccount?: () => void;
+  onOpenTutorial?: () => void;
+  onLogout?: () => void;
+  user?: { username: string; email?: string; role?: string; balance?: number; subscription_type?: string } | null;
   onToolsOpen?: () => void; // Called when tools dropdown opens to close other panels
   canvasTheme?: 'dark' | 'light';
   onlineUsersCount?: number;
@@ -52,17 +66,26 @@ interface ToolbarProps {
 export const Toolbar: React.FC<ToolbarProps> = ({
   onAddClick,
   onWorkflowsClick,
+  onProjectsClick,
   onHistoryClick,
   onAssetsClick,
   onTikTokClick,
   onStoryboardClick,
   onCollaborationClick,
+  onOpenAuth,
+  onOpenAdmin,
+  onOpenAccount,
+  onOpenTutorial,
+  onLogout,
+  user,
   onToolsOpen,
   canvasTheme = 'dark',
   onlineUsersCount = 0
 }) => {
   const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const toolsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -70,16 +93,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
         setIsToolsOpen(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
     };
 
-    if (isToolsOpen) {
+    if (isToolsOpen || isUserMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isToolsOpen]);
+  }, [isToolsOpen, isUserMenuOpen]);
 
   const handleToolClick = (callback?: (e: React.MouseEvent) => void) => (e: React.MouseEvent) => {
     setIsToolsOpen(false);
@@ -101,6 +127,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       </button>
 
       <div className="flex flex-col gap-4 py-2 px-1">
+        {/*
         <button
           className={`hover:scale-125 transition-all duration-200 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'
             }`}
@@ -109,7 +136,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <LayoutGrid size={20} />
         </button>
+        */}
         <button
+          className={`hover:scale-125 transition-all duration-200 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'
+            }`}
+          onClick={onProjectsClick}
+          title={t('projects')}
+        >
+          <Folder size={20} />
+        </button>
+        {/*
+		<button
           className={`hover:scale-125 transition-all duration-200 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'
             }`}
           title={t('assets')}
@@ -125,13 +162,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <History size={20} />
         </button>
-
+*/}
         {/* Collaboration Button */}
         <button
           className={`hover:scale-125 transition-all duration-200 relative ${isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'
             }`}
           onClick={onCollaborationClick}
-          title={t('collaboration') || 'Collaboration'}
+          title={t('collaboration')}
         >
           <Users size={20} />
           {onlineUsersCount > 0 && (
@@ -141,7 +178,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           )}
         </button>
 
-        {/* Tools Dropdown */}
+        {/* Tools Dropdown
         <div className="relative" ref={toolsRef}>
           <button
             className={`hover:scale-125 transition-all duration-200 ${isDark
@@ -159,7 +196,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <Wrench size={20} />
           </button>
 
-          {/* Dropdown Menu */}
+         
           {isToolsOpen && (
             <div className={`absolute left-10 top-0 rounded-lg shadow-2xl py-2 min-w-[240px] z-50 ${isDark ? 'bg-[#1a1a1a] border border-neutral-700' : 'bg-white border border-neutral-200'
               }`}>
@@ -177,7 +214,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 </div>
               </button>
 
-              {/* Storyboard Generator */}
               <button
                 onClick={handleToolClick(onStoryboardClick)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors group ${isDark ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'
@@ -194,14 +230,155 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             </div>
           )}
         </div>
+		 */}
       </div>
 
       <div className={`w-8 h-[1px] my-1 ${isDark ? 'bg-neutral-800' : 'bg-neutral-200'}`}></div>
 
-      <button className={`w-8 h-8 rounded-full overflow-hidden mb-2 hover:scale-110 transition-all duration-200 ${isDark ? 'border border-neutral-700' : 'border border-neutral-300'
-        }`}>
-        <img src="https://picsum.photos/40/40" alt="Profile" className="w-full h-full object-cover" />
-      </button>
+      <div className="relative" ref={userMenuRef}>
+        <button
+          className={`w-9 h-9 rounded-full flex items-center justify-center mb-2 hover:scale-110 transition-all duration-200 ${isDark ? 'border border-neutral-700 text-neutral-200 hover:text-white' : 'border border-neutral-300 text-neutral-700 hover:text-neutral-900'
+            }`}
+          onClick={() => {
+            setIsToolsOpen(false);
+            setIsUserMenuOpen((v) => {
+              const next = !v;
+              return next;
+            });
+          }}
+          title={user ? user.username : '登录'}
+        >
+          {user ? (
+            <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm">
+              {user.username.charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <User size={18} />
+          )}
+        </button>
+
+        {isUserMenuOpen && (
+          <div
+            className={`absolute left-12 bottom-0 w-[320px] rounded-2xl shadow-2xl border overflow-hidden ${isDark ? 'bg-[#1a1a1a] border-neutral-800' : 'bg-white border-neutral-200'}`}
+          >
+            {!user && (
+              <div className="p-4">
+                <button
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium ${isDark ? 'bg-neutral-800 text-white hover:bg-neutral-700' : 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200'}`}
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    onOpenAuth?.();
+                  }}
+                >
+                  登录 / 注册
+                </button>
+              </div>
+            )}
+
+            {user && (
+              <>
+                <div className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-lg font-semibold truncate ${isDark ? 'text-white' : 'text-neutral-900'}`}>{user.username}</div>
+                      <div className={`text-sm truncate ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>{user.email || ''}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className={`text-xs ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>积分余额</div>
+                    <div className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-neutral-900'}`}>{typeof user.balance === 'number' ? user.balance.toLocaleString() : '-'}</div>
+                  </div>
+                  <div className="mt-2">
+                    <span className={`text-xs px-2 py-1 rounded ${isDark ? 'bg-neutral-900 text-neutral-300' : 'bg-neutral-100 text-neutral-600'}`}>
+                      {user.subscription_type || 'free'}
+                    </span>
+                    {user.role === 'admin' && (
+                      <span className="ml-2 text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-300">Admin</span>
+                    )}
+                  </div>
+                </div>
+                <div className={`${isDark ? 'border-t border-neutral-800' : 'border-t border-neutral-200'}`}></div>
+                <div className="p-2">
+                  <button
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-200' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-neutral-900 text-neutral-300' : 'bg-neutral-100 text-neutral-600'}`}>
+                      <Bell size={18} />
+                    </span>
+                    <span className="text-base font-medium">我的通知</span>
+                  </button>
+                  <button
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-200' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
+                    <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-neutral-900 text-neutral-300' : 'bg-neutral-100 text-neutral-600'}`}>
+                      <Home size={18} />
+                    </span>
+                    <span className="text-base font-medium">个人主页</span>
+                  </button>
+                  <button
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-200' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      onOpenAccount?.();
+                    }}
+                  >
+                    <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-neutral-900 text-neutral-300' : 'bg-neutral-100 text-neutral-600'}`}>
+                      <Settings size={18} />
+                    </span>
+                    <span className="text-base font-medium">账户管理</span>
+                  </button>
+                  {user.role === 'admin' && (
+                    <button
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-200' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        onOpenAdmin?.();
+                      }}
+                    >
+                      <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-neutral-900 text-neutral-300' : 'bg-neutral-100 text-neutral-600'}`}>
+                        <Settings size={18} />
+                      </span>
+                      <span className="text-base font-medium">管理后台</span>
+                    </button>
+                  )}
+                </div>
+                <div className={`${isDark ? 'border-t border-neutral-800' : 'border-t border-neutral-200'}`}></div>
+                <div className="p-2">
+                  <button
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-200' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      onOpenTutorial?.();
+                    }}
+                  >
+                    <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-neutral-900 text-neutral-300' : 'bg-neutral-100 text-neutral-600'}`}>
+                      <HelpCircle size={18} />
+                    </span>
+                    <span className="text-base font-medium">使用教程</span>
+                  </button>
+                  <button
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isDark ? 'hover:bg-neutral-800 text-neutral-200' : 'hover:bg-neutral-100 text-neutral-700'}`}
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      onLogout?.();
+                    }}
+                  >
+                    <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-neutral-900 text-neutral-300' : 'bg-neutral-100 text-neutral-600'}`}>
+                      <LogOut size={18} />
+                    </span>
+                    <span className="text-base font-medium">登出账号</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

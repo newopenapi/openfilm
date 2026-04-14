@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useRef, useEffect, memo } from 'react';
-import { Sparkles, Banana, Settings2, Check, ChevronDown, ChevronUp, GripVertical, Image as ImageIcon, Film, Clock, Expand, Shrink, Monitor, Crop, HardDrive } from 'lucide-react';
+import { Sparkles, Banana, Settings2, Check, ChevronDown, ChevronUp, GripVertical, Image as ImageIcon, Film, Clock, Expand, Shrink, Monitor, Crop, HardDrive, X, Palette } from 'lucide-react';
 import { NodeData, NodeStatus, NodeType } from '../../types';
 import { OpenAIIcon, GoogleIcon, KlingIcon, HailuoIcon, VolcanoIcon } from '../icons/BrandIcons';
 import { useFaceDetection } from '../../hooks/useFaceDetection';
@@ -88,9 +88,12 @@ const IMAGE_MODELS = [
         aspectRatios: ["Auto", "1024x1024", "1536x1024", "1024x1536"]
     },
     // NanoBanana / Gemini models via bsv.vip
+    // gemini-2.5-flash-image → NanoBanana
+    // gemini-3-pro-image-preview → NanoBanana Pro
+    // gemini-3.1-flash-image-preview → NanoBanana 2
     {
         id: 'gemini-2.5-flash-image',
-        name: 'Gemini 2.5 Flash',
+        name: 'NanoBanana',
         provider: 'nanobanana',
         supportsImageToImage: true,
         supportsMultiImage: false,
@@ -99,7 +102,7 @@ const IMAGE_MODELS = [
     },
     {
         id: 'gemini-3-pro-image-preview',
-        name: 'Gemini 3 Pro',
+        name: 'NanoBanana Pro',
         provider: 'nanobanana',
         supportsImageToImage: true,
         supportsMultiImage: false,
@@ -108,7 +111,7 @@ const IMAGE_MODELS = [
     },
     {
         id: 'gemini-3.1-flash-image-preview',
-        name: 'Gemini 3.1 Flash',
+        name: 'NanoBanana 2',
         provider: 'nanobanana',
         supportsImageToImage: true,
         supportsMultiImage: false,
@@ -134,6 +137,44 @@ const IMAGE_MODELS = [
         recommended: true,
         resolutions: ["1K", "2K"],
         aspectRatios: ["Auto", "1:1", "9:16", "16:9", "3:4", "4:3", "3:2", "2:3", "21:9"]
+    },
+    // Volcano Engine (Doubao) - Seedream image models
+    {
+        id: 'seedream-3.0',
+        name: 'Seedream 3.0',
+        provider: 'volcano',
+        supportsImageToImage: true,
+        supportsMultiImage: false,
+        resolutions: ["1K", "2K"],
+        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "4:3", "3:4"]
+    },
+    {
+        id: 'seedream-4.0',
+        name: 'Seedream 4.0',
+        provider: 'volcano',
+        supportsImageToImage: true,
+        supportsMultiImage: false,
+        recommended: true,
+        resolutions: ["1K", "2K"],
+        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "4:3", "3:4", "21:9"]
+    },
+    {
+        id: 'seedream-5.0',
+        name: 'Seedream 5.0',
+        provider: 'volcano',
+        supportsImageToImage: true,
+        supportsMultiImage: false,
+        resolutions: ["1K", "2K"],
+        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "4:3", "3:4", "21:9"]
+    },
+    {
+        id: 'seedream-5.0-lite',
+        name: 'Seedream 5.0 Lite',
+        provider: 'volcano',
+        supportsImageToImage: true,
+        supportsMultiImage: false,
+        resolutions: ["1K", "2K"],
+        aspectRatios: ["Auto", "1:1", "9:16", "16:9", "4:3", "3:4"]
     },
 ];
 
@@ -958,11 +999,11 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                             </>
                                         )}
 
-                                        {/* NanoBanana / Gemini Models */}
+                                        {/* NanoBanana Models */}
                                         {availableImageModels.filter(m => m.provider === 'nanobanana').length > 0 && (
                                             <>
                                                 <div className="px-3 py-1.5 text-[10px] font-bold text-neutral-500 uppercase tracking-wider bg-[#1f1f1f] border-t border-neutral-700">
-                                                    NanoBanana (Gemini)
+                                                    NanoBanana
                                                 </div>
                                                 {availableImageModels.filter(m => m.provider === 'nanobanana').map(model => (
                                                     <button
@@ -973,6 +1014,32 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                                     >
                                                         <span className="flex items-center gap-2">
                                                             <Banana size={12} className="text-yellow-400" />
+                                                            {model.name}
+                                                            {model.recommended && (
+                                                                <span className="text-[9px] px-1 py-0.5 bg-green-600/30 text-green-400 rounded">REC</span>
+                                                            )}
+                                                        </span>
+                                                        {currentImageModel.id === model.id && <Check size={12} />}
+                                                    </button>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* Volcano Engine (Seedream) Models */}
+                                        {availableImageModels.filter(m => m.provider === 'volcano').length > 0 && (
+                                            <>
+                                                <div className="px-3 py-1.5 text-[10px] font-bold text-neutral-500 uppercase tracking-wider bg-[#1f1f1f] border-t border-neutral-700">
+                                                    Volcano / Seedream
+                                                </div>
+                                                {availableImageModels.filter(m => m.provider === 'volcano').map(model => (
+                                                    <button
+                                                        key={model.id}
+                                                        onClick={() => handleImageModelChange(model.id)}
+                                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left hover:bg-[#333] transition-colors ${currentImageModel.id === model.id ? 'text-blue-400' : 'text-neutral-300'
+                                                            }`}
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            <VolcanoIcon size={14} />
                                                             {model.name}
                                                             {model.recommended && (
                                                                 <span className="text-[9px] px-1 py-0.5 bg-green-600/30 text-green-400 rounded">REC</span>
@@ -1196,7 +1263,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
             {/* Kling V1.5 Reference Settings - For Image nodes with connected input */}
             {!isVideoNode && data.imageModel === 'kling-v1-5' && connectedImageNodes.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-neutral-800">
-                    <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-2">Reference Settings</div>
+                    <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-2">{t('referenceSettings')}</div>
 
                     {/* Mode Tabs */}
                     <div className="flex gap-1 mb-3 p-1 bg-neutral-800/50 rounded-lg">
@@ -1351,6 +1418,168 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                 </div>
             )}
 
+            {/* Reference Images Panel - Seedance 2.0 (首帧/尾帧/风格参考) */}
+            {isVideoNode && connectedImageNodes.length > 0 && (
+                <div className="mt-3 p-3 bg-neutral-800/30 rounded-xl border border-neutral-700/50">
+                    <div className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium mb-3 flex items-center gap-2">
+                        <ImageIcon size={12} className="text-cyan-400" />
+                        {t('referenceImages')}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                        {/* First Frame (首帧) */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-4 h-4 rounded bg-green-600 flex items-center justify-center">
+                                    <span className="text-[7px] font-bold text-white">1</span>
+                                </div>
+                                <span className="text-[9px] text-green-400 font-medium">{t('firstFrame')}</span>
+                            </div>
+
+                            {data.referenceImageNodeId ? (
+                                (() => {
+                                    const firstFrameNode = connectedImageNodes.find(n => n.id === data.referenceImageNodeId);
+                                    return firstFrameNode ? (
+                                        <div className="relative group cursor-pointer">
+                                            <img
+                                                src={firstFrameNode.url}
+                                                alt="First Frame"
+                                                className="w-full aspect-video object-cover rounded-lg border-2 border-green-500/50"
+                                            />
+                                            <div className="absolute inset-0 bg-green-500/0 group-hover:bg-green-500/20 transition-colors rounded-lg flex items-center justify-center">
+                                                <span className="text-[8px] text-white bg-black/60 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">START</span>
+                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onUpdate(data.id, { referenceImageNodeId: undefined }); }}
+                                                className="absolute -top-1 -right-1 p-0.5 bg-black/70 rounded-full text-neutral-400 hover:text-red-400 transition-colors"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ) : null;
+                                })()
+                            ) : (
+                                <div className="relative aspect-video rounded-lg border-2 border-dashed border-neutral-600 bg-neutral-800/50 hover:border-green-500/50 transition-colors flex flex-col items-center justify-center">
+                                    <Film size={14} className="text-neutral-600 mb-1" />
+                                    <span className="text-[8px] text-neutral-600">点击选择</span>
+                                    <div className="absolute inset-0 grid grid-cols-3 gap-0.5 p-1 opacity-0 hover:opacity-100 transition-opacity">
+                                        {connectedImageNodes.slice(0, 3).map((imgNode) => (
+                                            <button
+                                                key={imgNode.id}
+                                                onClick={(e) => { e.stopPropagation(); onUpdate(data.id, { referenceImageNodeId: imgNode.id }); }}
+                                                className="relative rounded overflow-hidden border border-transparent hover:border-green-400 transition-colors"
+                                            >
+                                                <img src={imgNode.url} alt="" className="w-full h-full object-cover" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* End Frame (尾帧) */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-4 h-4 rounded bg-orange-600 flex items-center justify-center">
+                                    <span className="text-[7px] font-bold text-white">2</span>
+                                </div>
+                                <span className="text-[9px] text-orange-400 font-medium">{t('endFrame')}</span>
+                            </div>
+
+                            {data.endFrameImageNodeId ? (
+                                (() => {
+                                    const endFrameNode = connectedImageNodes.find(n => n.id === data.endFrameImageNodeId);
+                                    return endFrameNode ? (
+                                        <div className="relative group cursor-pointer">
+                                            <img
+                                                src={endFrameNode.url}
+                                                alt="End Frame"
+                                                className="w-full aspect-video object-cover rounded-lg border-2 border-orange-500/50"
+                                            />
+                                            <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/20 transition-colors rounded-lg flex items-center justify-center">
+                                                <span className="text-[8px] text-white bg-black/60 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">END</span>
+                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onUpdate(data.id, { endFrameImageNodeId: undefined }); }}
+                                                className="absolute -top-1 -right-1 p-0.5 bg-black/70 rounded-full text-neutral-400 hover:text-red-400 transition-colors"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ) : null;
+                                })()
+                            ) : (
+                                <div className="relative aspect-video rounded-lg border-2 border-dashed border-neutral-600 bg-neutral-800/50 hover:border-orange-500/50 transition-colors flex flex-col items-center justify-center">
+                                    <Film size={14} className="text-neutral-600 mb-1" />
+                                    <span className="text-[8px] text-neutral-600">点击选择</span>
+                                    <div className="absolute inset-0 grid grid-cols-3 gap-0.5 p-1 opacity-0 hover:opacity-100 transition-opacity">
+                                        {connectedImageNodes.slice(0, 3).map((imgNode) => (
+                                            <button
+                                                key={imgNode.id}
+                                                onClick={(e) => { e.stopPropagation(); onUpdate(data.id, { endFrameImageNodeId: imgNode.id }); }}
+                                                className="relative rounded overflow-hidden border border-transparent hover:border-orange-400 transition-colors"
+                                            >
+                                                <img src={imgNode.url} alt="" className="w-full h-full object-cover" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Style Reference (风格参考) */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-4 h-4 rounded bg-purple-600 flex items-center justify-center">
+                                    <Palette size={10} className="text-white" />
+                                </div>
+                                <span className="text-[9px] text-purple-400 font-medium">{t('styleReference')}</span>
+                            </div>
+
+                            {data.styleReferenceNodeId ? (
+                                (() => {
+                                    const styleRefNode = connectedImageNodes.find(n => n.id === data.styleReferenceNodeId);
+                                    return styleRefNode ? (
+                                        <div className="relative group cursor-pointer">
+                                            <img
+                                                src={styleRefNode.url}
+                                                alt="Style Reference"
+                                                className="w-full aspect-video object-cover rounded-lg border-2 border-purple-500/50"
+                                            />
+                                            <div className="absolute inset-0 bg-purple-500/0 group-hover:bg-purple-500/20 transition-colors rounded-lg flex items-center justify-center">
+                                                <span className="text-[8px] text-white bg-black/60 px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">STYLE</span>
+                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onUpdate(data.id, { styleReferenceNodeId: undefined }); }}
+                                                className="absolute -top-1 -right-1 p-0.5 bg-black/70 rounded-full text-neutral-400 hover:text-red-400 transition-colors"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ) : null;
+                                })()
+                            ) : (
+                                <div className="relative aspect-video rounded-lg border-2 border-dashed border-neutral-600 bg-neutral-800/50 hover:border-purple-500/50 transition-colors flex flex-col items-center justify-center">
+                                    <Palette size={14} className="text-neutral-600 mb-1" />
+                                    <span className="text-[8px] text-neutral-600">点击选择</span>
+                                    <div className="absolute inset-0 grid grid-cols-3 gap-0.5 p-1 opacity-0 hover:opacity-100 transition-opacity">
+                                        {connectedImageNodes.slice(0, 3).map((imgNode) => (
+                                            <button
+                                                key={imgNode.id}
+                                                onClick={(e) => { e.stopPropagation(); onUpdate(data.id, { styleReferenceNodeId: imgNode.id }); }}
+                                                className="relative rounded overflow-hidden border border-transparent hover:border-purple-400 transition-colors"
+                                            >
+                                                <img src={imgNode.url} alt="" className="w-full h-full object-cover" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Advanced Settings Drawer - Only for Video nodes */}
             {
                 isVideoNode && (
@@ -1378,7 +1607,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                         <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                                         </svg>
-                                        <span className="text-[11px] text-neutral-300">Audio</span>
+                                        <span className="text-[11px] text-neutral-300">{t('generateAudio')}</span>
                                         <button
                                             onClick={() => onUpdate(data.id, { generateAudio: !(data.generateAudio !== false) })}
                                             className={`relative w-8 h-4 rounded-full transition-colors ${data.generateAudio !== false ? 'bg-cyan-600' : 'bg-neutral-700'}`}
@@ -1399,7 +1628,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
 
                                         {/* Seed Input */}
                                         <div className="flex items-center gap-2">
-                                            <label className="text-[11px] text-neutral-400 w-16">Seed</label>
+                                            <label className="text-[11px] text-neutral-400 w-16">{t('seed')}</label>
                                             <input
                                                 type="number"
                                                 value={data.seed || ''}
@@ -1411,7 +1640,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
 
                                         {/* Camera Fixed Toggle */}
                                         <div className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-neutral-800/50 rounded-lg">
-                                            <span className="text-[11px] text-neutral-300">Fixed Camera</span>
+                                            <span className="text-[11px] text-neutral-300">{t('fixedCamera')}</span>
                                             <button
                                                 onClick={() => onUpdate(data.id, { cameraFixed: !data.cameraFixed })}
                                                 className={`relative w-8 h-4 rounded-full transition-colors ${data.cameraFixed ? 'bg-cyan-600' : 'bg-neutral-700'}`}
@@ -1424,7 +1653,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
 
                                         {/* Watermark Toggle */}
                                         <div className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-neutral-800/50 rounded-lg">
-                                            <span className="text-[11px] text-neutral-300">Watermark</span>
+                                            <span className="text-[11px] text-neutral-300">{t('watermark')}</span>
                                             <button
                                                 onClick={() => onUpdate(data.id, { watermark: !data.watermark })}
                                                 className={`relative w-8 h-4 rounded-full transition-colors ${data.watermark ? 'bg-cyan-600' : 'bg-neutral-700'}`}
@@ -1437,7 +1666,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
 
                                         {/* Return Last Frame Toggle */}
                                         <div className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-neutral-800/50 rounded-lg">
-                                            <span className="text-[11px] text-neutral-300">Return Last Frame</span>
+                                            <span className="text-[11px] text-neutral-300">{t('returnLastFrame')}</span>
                                             <button
                                                 onClick={() => onUpdate(data.id, { returnLastFrame: !data.returnLastFrame })}
                                                 className={`relative w-8 h-4 rounded-full transition-colors ${data.returnLastFrame ? 'bg-cyan-600' : 'bg-neutral-700'}`}
@@ -1446,6 +1675,90 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                                                     className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform shadow-md ${data.returnLastFrame ? 'left-4' : 'left-0.5'}`}
                                                 />
                                             </button>
+                                        </div>
+
+                                        {/* Seedance 2.0 Prompt Helper - Quick keyword insertion based on official guide */}
+                                        <div className="pt-3 border-t border-neutral-700/50 mt-3">
+                                            <div className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium mb-2 flex items-center gap-2">
+                                                <Sparkles size={10} className="text-orange-400" />
+                                                {t('seedancePromptHelper')}
+                                            </div>
+                                            <div className="space-y-2">
+                                                {/* Shot Types (镜头语言) */}
+                                                <div>
+                                                    <div className="text-[9px] text-neutral-500 mb-1">{t('shotType')}</div>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {['特写', '近景', '中景', '全景', '远景', '航拍', '俯拍', '仰拍', '镜头推进', '镜头拉远', '环绕拍摄', '跟随镜头', '慢动作'].map(shot => (
+                                                            <button
+                                                                key={shot}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newPrompt = localPrompt.trim() ? `${localPrompt.trim()}, ${shot}` : shot;
+                                                                    handlePromptChange(newPrompt);
+                                                                }}
+                                                                className="px-1.5 py-0.5 text-[9px] bg-neutral-700/50 hover:bg-cyan-600 text-neutral-300 hover:text-white rounded transition-colors border border-neutral-600"
+                                                            >
+                                                                {shot}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {/* Motion/Action (动作描述) */}
+                                                <div>
+                                                    <div className="text-[9px] text-neutral-500 mb-1">{t('motion')}</div>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {['缓慢行走', '快速奔跑', '旋转', '跳跃', '挥手微笑', '缓缓转身', '自然摆动', '匀速运动', '静止站立', '水流流动', '风吹树叶'].map(motion => (
+                                                            <button
+                                                                key={motion}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newPrompt = localPrompt.trim() ? `${localPrompt.trim()}, ${motion}` : motion;
+                                                                    handlePromptChange(newPrompt);
+                                                                }}
+                                                                className="px-1.5 py-0.5 text-[9px] bg-neutral-700/50 hover:bg-green-600 text-neutral-300 hover:text-white rounded transition-colors border border-neutral-600"
+                                                            >
+                                                                {motion}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {/* Lighting & Style (光影风格) */}
+                                                <div>
+                                                    <div className="text-[9px] text-neutral-500 mb-1">{t('styleLighting')}</div>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {['电影质感', '胶片风格', '浅景深', '4K高清', '黄昏暖光', '清晨柔光', '夜景霓虹灯', '赛博朋克', '水墨风格', '自然光影', '高对比度'].map(style => (
+                                                            <button
+                                                                key={style}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const newPrompt = localPrompt.trim() ? `${localPrompt.trim()}, ${style}` : style;
+                                                                    handlePromptChange(newPrompt);
+                                                                }}
+                                                                className="px-1.5 py-0.5 text-[9px] bg-neutral-700/50 hover:bg-purple-600 text-neutral-300 hover:text-white rounded transition-colors border border-neutral-600"
+                                                            >
+                                                                {style}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {/* Clear Button */}
+                                                {localPrompt && (
+                                                    <div className="flex justify-end pt-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handlePromptChange('');
+                                                            }}
+                                                            className="px-2 py-0.5 text-[9px] text-neutral-400 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors"
+                                                        >
+                                                            {t('clearPrompt')}
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="mt-2 text-[9px] text-neutral-500">
+                                                {t('seedancePromptTip')}
+                                            </div>
                                         </div>
                                     </div>
                                 )}

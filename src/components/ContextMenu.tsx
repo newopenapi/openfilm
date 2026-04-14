@@ -132,7 +132,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         <div className="p-1.5 flex flex-col gap-0.5">
           <MenuItem
             icon={<ImageIcon size={16} />}
-            label="Create Asset"
+            label={t('createAsset')}
             onClick={() => {
               if (onCreateAsset) {
                 onCreateAsset();
@@ -146,7 +146,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
           <MenuItem
             icon={<Copy size={16} />}
-            label="Copy"
+            label={t('copy')}
             shortcut="CtrlC"
             onClick={() => {
               if (onCopy) {
@@ -158,7 +158,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           />
           <MenuItem
             icon={<Clipboard size={16} />}
-            label="Paste"
+            label={t('paste')}
             shortcut="CtrlV"
             onClick={handlePaste}
             disabled={true} // Disabled in screenshot
@@ -166,7 +166,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           />
           <MenuItem
             icon={<Files size={16} />}
-            label="Duplicate"
+            label={t('duplicate')}
             onClick={() => {
               if (onDuplicate) {
                 onDuplicate();
@@ -179,7 +179,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
           <MenuItem
             icon={<Trash2 size={16} />} // Screenshot has text "Delete", icon might be different
-            label="Delete"
+            label={t('delete')}
             shortcut="⌫,del"
             onClick={() => onSelectType('DELETE')}
             canvasTheme={canvasTheme}

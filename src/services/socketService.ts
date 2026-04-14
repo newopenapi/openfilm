@@ -17,6 +17,25 @@ class CollaborationService {
    */
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
+      if (this.socket) {
+        if (this.socket.connected) {
+          resolve();
+          return;
+        }
+        const onConnect = () => {
+          this.socket?.off('connect_error', onError);
+          resolve();
+        };
+        const onError = (error: any) => {
+          this.socket?.off('connect', onConnect);
+          reject(error);
+        };
+        this.socket.once('connect', onConnect);
+        this.socket.once('connect_error', onError);
+        this.socket.connect();
+        return;
+      }
+
       const token = getToken();
       if (!token) {
         reject(new Error('No auth token available'));

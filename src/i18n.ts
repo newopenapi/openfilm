@@ -55,6 +55,7 @@ export function setLanguage(lang: Language): void {
 // ============================================================================
 
 interface Translations {
+    [key: string]: string;
     // General
     loading: string;
     error: string;
@@ -65,6 +66,10 @@ interface Translations {
     delete: string;
     new: string;
     edit: string;
+    copy: string;
+    duplicate: string;
+    createAsset: string;
+    processing: string;
     
     // Workflow Panel
     myWorkflows: string;
@@ -99,6 +104,7 @@ interface Translations {
         
         // Toolbar
         myWorkflowsTitle: string;
+        projects: string;
         assets: string;
         history: string;
         tools: string;
@@ -106,6 +112,80 @@ interface Translations {
         downloadWithoutWatermark: string;
         storyboardGenerator: string;
         createScenesWithAI: string;
+        projectsTitle: string;
+        newProject: string;
+        createProject: string;
+        createNewProject: string;
+        editProject: string;
+        projectTitleLabel: string;
+        projectDescriptionLabel: string;
+        noProjectsYet: string;
+        createFirstProjectHint: string;
+        updatedAtPrefix: string;
+        searchProjectsPlaceholder: string;
+        showAll: string;
+        gridView: string;
+        listView: string;
+        import: string;
+        projectNamePlaceholder: string;
+        projectDescriptionPlaceholder: string;
+        justNow: string;
+        minutesAgo: string;
+        hoursAgo: string;
+        collaboration: string;
+        collaborationTitle: string;
+        collaborationTabUsers: string;
+        collaborationTabChat: string;
+        collaborationTabInvite: string;
+        collaborationNoOtherUsers: string;
+        collaborationTypeMessage: string;
+        collaborationSend: string;
+        collaborationInviteTitle: string;
+        collaborationInviteDesc: string;
+        collaborationPermissionLevel: string;
+        collaborationRoleOwner: string;
+        collaborationRoleEditor: string;
+        collaborationRoleViewer: string;
+        collaborationRoleMember: string;
+        collaborationEditorDesc: string;
+        collaborationViewerDesc: string;
+        collaborationInviteLink: string;
+        collaborationGenerateLink: string;
+        collaborationCopy: string;
+        collaborationCopied: string;
+        collaborationShare: string;
+        collaborationAnyoneCanJoinAs: string;
+        collaborationUserJoined: string;
+        collaborationUserLeft: string;
+        authTitleUserCenter: string;
+        authTitleLogin: string;
+        authTitleRegister: string;
+        authWelcomeBack: string;
+        authLoginSubtitle: string;
+        authRegisterSubtitle: string;
+        authUsername: string;
+        authUsernamePlaceholder: string;
+        authEmail: string;
+        authEmailPlaceholder: string;
+        authPassword: string;
+        authPasswordPlaceholder: string;
+        authConfirmPassword: string;
+        authConfirmPasswordPlaceholder: string;
+        authPasswordMismatch: string;
+        authPasswordMinLength: string;
+        authOperationFailed: string;
+        authNetworkError: string;
+        authCreditsBalance: string;
+        authSubscriptionFree: string;
+        authSubscriptionBasic: string;
+        authSubscriptionPro: string;
+        authSubscriptionEnterprise: string;
+        authSubscriptionAndCredits: string;
+        authAdminPanel: string;
+        authLogout: string;
+        authSwitchToRegister: string;
+        authSwitchToLogin: string;
+        deleteConfirmProject: string;
         
         // Storyboard Generator
         characters: string;
@@ -149,13 +229,11 @@ interface Translations {
         // Asset Library Panel
         assetLibrary: string;
         noAssetsInCategory: string;
-        loading: string;
         deleteAsset: string;
         deleteConfirm: string;
         yes: string;
         no: string;
         deleteAssetTooltip: string;
-        categoryAll: string;
         categoryCharacter: string;
         categoryScene: string;
         categoryItem: string;
@@ -172,7 +250,6 @@ interface Translations {
         generatedVideosAppearHere: string;
         deleteAssetTitle: string;
         deleteAssetConfirm: string;
-        cancel: string;
         
         // Storyboard Modal
         chooseReferenceImages: string;
@@ -225,7 +302,11 @@ interface Translations {
         loadingModels: string;
         noModelsFound: string;
         addModelFilesTip: string;
-    
+        zoom: string;
+
+    // Reference settings (Kling V1.5)
+    referenceSettings: string;
+
     // Models
     videoModels: string;
     imageModels: string;
@@ -235,15 +316,8 @@ interface Translations {
     // Video generation
     textToVideo: string;
     imageToVideo: string;
-    frameToFrame: string;
-    motionControl: string;
     
     // Settings
-    resolution: string;
-    aspectRatio: string;
-    duration: string;
-    quality: string;
-    generate: string;
     advanced: string;
     
     // API Keys
@@ -266,8 +340,75 @@ interface Translations {
     seedance20: string;
     seedance20Fast: string;
     seedance15Pro: string;
-    seedance10Pro: string;
+        seedance10Pro: string;
     seedance10Lite: string;
+
+    // Context Menu & Nodes
+    upload: string;
+    addAssets: string;
+    addNodes: string;
+    undo: string;
+    redo: string;
+    paste: string;
+    generateFromNode: string;
+    textGeneration: string;
+    text: string;
+    writeOwnContent: string;
+    textToImage: string;
+    imageToImage: string;
+    tryTo: string;
+    inputFrame: string;
+    generating: string;
+    readyToAnimate: string;
+    waitingForInput: string;
+    selectModelEnterPrompt: string;
+    imageGeneration: string;
+    image: string;
+    videoGeneration: string;
+    video: string;
+    videoEditor: string;
+    localModelsOpenSource: string;
+    localImageModel: string;
+    localVideoModel: string;
+    useDownloadedOpenSourceModels: string;
+    animateDiffSvdMore: string;
+    scriptAdcopyBrandText: string;
+    promotionalImagePosterCover: string;
+    
+    // Create Asset
+    addToExisting: string;
+    coverLabel: string;
+    nameLabel: string;
+    assetNamePlaceholder: string;
+    create: string;
+    saving: string;
+    saved: string;
+    failed: string;
+    writeTextPlaceholder: string;
+    shrinkTextArea: string;
+    expandTextArea: string;
+
+    // Seedance Prompt Helper
+    seedancePromptHelper: string;
+    shotType: string;
+    motion: string;
+    styleLighting: string;
+    clearPrompt: string;
+    seedancePromptTip: string;
+
+    // Reference Images
+    referenceImages: string;
+    firstFrame: string;
+    endFrame: string;
+    styleReference: string;
+    clear: string;
+
+    // Toggle labels
+    seed: string;
+    fixedCamera: string;
+    generateAudio: string;
+    watermark: string;
+    returnLastFrame: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -282,6 +423,10 @@ const translations: Record<Language, Translations> = {
         delete: 'Delete',
         new: 'New',
         edit: 'Edit',
+        copy: 'Copy',
+        duplicate: 'Duplicate',
+        createAsset: 'Create Asset',
+        processing: 'Processing...',
         
         // Workflow Panel
         myWorkflows: 'My Workflows',
@@ -316,6 +461,7 @@ const translations: Record<Language, Translations> = {
         
         // Toolbar
         myWorkflowsTitle: 'My Workflows',
+        projects: 'Projects',
         assets: 'Assets',
         history: 'History',
         tools: 'Tools',
@@ -323,6 +469,80 @@ const translations: Record<Language, Translations> = {
         downloadWithoutWatermark: 'Download without watermark',
         storyboardGenerator: 'Storyboard Generator',
         createScenesWithAI: 'Create scenes with AI',
+        projectsTitle: 'My Projects',
+        newProject: 'New Project',
+        createProject: 'Create Project',
+        createNewProject: 'Create New Project',
+        editProject: 'Edit Project',
+        projectTitleLabel: 'Project Title',
+        projectDescriptionLabel: 'Description',
+        noProjectsYet: 'No projects yet',
+        createFirstProjectHint: 'Create your first project to get started',
+        updatedAtPrefix: 'Updated',
+        searchProjectsPlaceholder: 'Search projects',
+        showAll: 'Show all',
+        gridView: 'Grid view',
+        listView: 'List view',
+        import: 'Import',
+        projectNamePlaceholder: 'My Awesome Project',
+        projectDescriptionPlaceholder: 'Optional description...',
+        justNow: 'just now',
+        minutesAgo: 'min ago',
+        hoursAgo: 'hours ago',
+        collaboration: 'Collaboration',
+        collaborationTitle: 'Collaboration',
+        collaborationTabUsers: 'Users',
+        collaborationTabChat: 'Chat',
+        collaborationTabInvite: 'Invite',
+        collaborationNoOtherUsers: 'No other users online',
+        collaborationTypeMessage: 'Type a message...',
+        collaborationSend: 'Send',
+        collaborationInviteTitle: 'Invite Collaborators',
+        collaborationInviteDesc: 'Share this link to invite others to collaborate on this project.',
+        collaborationPermissionLevel: 'Permission Level',
+        collaborationRoleOwner: 'Owner',
+        collaborationRoleEditor: 'Editor',
+        collaborationRoleViewer: 'Viewer',
+        collaborationRoleMember: 'Member',
+        collaborationEditorDesc: 'Can edit nodes, add connections, and chat',
+        collaborationViewerDesc: 'Can view the project and chat only',
+        collaborationInviteLink: 'Invite Link',
+        collaborationGenerateLink: 'Click to generate link...',
+        collaborationCopy: 'Copy',
+        collaborationCopied: 'Copied!',
+        collaborationShare: 'Share',
+        collaborationAnyoneCanJoinAs: 'Anyone with this link can join as {role}',
+        collaborationUserJoined: '{name} joined the project',
+        collaborationUserLeft: '{name} left the project',
+        authTitleUserCenter: 'User Center',
+        authTitleLogin: 'Login',
+        authTitleRegister: 'Register',
+        authWelcomeBack: 'Welcome back, {name}',
+        authLoginSubtitle: 'Welcome back, please login to your account',
+        authRegisterSubtitle: 'Create a new account to get started',
+        authUsername: 'Username',
+        authUsernamePlaceholder: 'Enter username',
+        authEmail: 'Email',
+        authEmailPlaceholder: 'Enter email',
+        authPassword: 'Password',
+        authPasswordPlaceholder: 'Enter password',
+        authConfirmPassword: 'Confirm Password',
+        authConfirmPasswordPlaceholder: 'Enter password again',
+        authPasswordMismatch: 'Passwords do not match',
+        authPasswordMinLength: 'Password must be at least 6 characters',
+        authOperationFailed: 'Operation failed',
+        authNetworkError: 'Network error, please try again',
+        authCreditsBalance: 'Credits Balance',
+        authSubscriptionFree: 'Free',
+        authSubscriptionBasic: 'Basic',
+        authSubscriptionPro: 'Pro',
+        authSubscriptionEnterprise: 'Enterprise',
+        authSubscriptionAndCredits: 'Subscription & Credits',
+        authAdminPanel: 'Admin Panel',
+        authLogout: 'Logout',
+        authSwitchToRegister: "Don't have an account? Register",
+        authSwitchToLogin: 'Already have an account? Login',
+        deleteConfirmProject: 'Are you sure you want to delete this project?',
         
         // Storyboard Generator
         characters: 'Characters',
@@ -366,13 +586,11 @@ const translations: Record<Language, Translations> = {
         // Asset Library Panel
         assetLibrary: 'Asset Library',
         noAssetsInCategory: 'No assets found in this category.',
-        loading: 'Loading...',
         deleteAsset: 'Delete Asset',
         deleteConfirm: 'Delete?',
         yes: 'Yes',
         no: 'No',
         deleteAssetTooltip: 'Delete Asset',
-        categoryAll: 'All',
         categoryCharacter: 'Character',
         categoryScene: 'Scene',
         categoryItem: 'Item',
@@ -389,8 +607,6 @@ const translations: Record<Language, Translations> = {
         generatedVideosAppearHere: 'Generated videos will appear here',
         deleteAssetTitle: 'Delete Asset',
         deleteAssetConfirm: 'Are you sure you want to delete this {type}? This action cannot be undone.',
-        cancel: 'Cancel',
-        delete: 'Delete',
         
         // Storyboard Modal
         chooseReferenceImages: 'Choose up to 3 reference images from your Asset Library to guide the AI.',
@@ -440,6 +656,7 @@ const translations: Record<Language, Translations> = {
         duration: 'Duration',
         model: 'Model',
         quality: 'Quality',
+        referenceSettings: 'Reference Settings',
         loadingModels: 'Loading models...',
         noModelsFound: 'No models found',
         addModelFilesTip: 'Add .safetensors files to models/',
@@ -447,7 +664,6 @@ const translations: Record<Language, Translations> = {
         
         // TikTok Import Modal
         importTikTokVideo: 'Import TikTok Video',
-        downloadWithoutWatermark: 'Download without watermark',
         tiktokVideoUrl: 'TikTok Video URL',
         pasteTikTokUrlPlaceholder: 'Paste TikTok video URL here (Ctrl+V)',
         supportedTikTokLinks: 'Supports tiktok.com, vm.tiktok.com, and vt.tiktok.com links',
@@ -499,6 +715,15 @@ const translations: Record<Language, Translations> = {
         generateFromNode: 'Generate from this node',
         textGeneration: 'Text Generation',
         text: 'Text',
+        writeOwnContent: 'Write your own',
+        textToImage: 'Text to Image',
+        imageToImage: 'Image to Image',
+        tryTo: 'Try to:',
+        inputFrame: 'Input Frame',
+        generating: 'Generating...',
+        readyToAnimate: 'Ready to animate',
+        waitingForInput: 'Waiting for input...',
+        selectModelEnterPrompt: 'Select a model and enter prompt',
         imageGeneration: 'Image Generation',
         image: 'Image',
         videoGeneration: 'Video Generation',
@@ -512,6 +737,19 @@ const translations: Record<Language, Translations> = {
         scriptAdcopyBrandText: 'Script, Ad copy, Brand text',
         promotionalImagePosterCover: 'Promotional image, poster, cover',
         
+        // Create Asset
+        addToExisting: 'Add to Existing',
+        coverLabel: 'Cover',
+        nameLabel: 'Name',
+        assetNamePlaceholder: 'Asset Name',
+        create: 'Create',
+        saving: 'Saving...',
+        saved: 'Saved!',
+        failed: 'Failed',
+        writeTextPlaceholder: 'Write your text here...',
+        shrinkTextArea: 'Shrink text area',
+        expandTextArea: 'Expand text area',
+        
         // Models
         videoModels: 'Video Models',
         imageModels: 'Image Models',
@@ -521,15 +759,8 @@ const translations: Record<Language, Translations> = {
         // Video generation
         textToVideo: 'Text → Video',
         imageToVideo: 'Image → Video',
-        frameToFrame: 'Frame-to-Frame',
-        motionControl: 'Motion Control',
         
         // Settings
-        resolution: 'Resolution',
-        aspectRatio: 'Aspect Ratio',
-        duration: 'Duration',
-        quality: 'Quality',
-        generate: 'Generate',
         advanced: 'Advanced',
         
         // API Keys
@@ -554,6 +785,28 @@ const translations: Record<Language, Translations> = {
         seedance15Pro: 'Seedance 1.5 Pro',
         seedance10Pro: 'Seedance 1.0 Pro',
         seedance10Lite: 'Seedance 1.0 Lite',
+
+        // Seedance Prompt Helper
+        seedancePromptHelper: 'Seedance Prompt Helper',
+        shotType: 'Shot Type',
+        motion: 'Motion',
+        styleLighting: 'Style & Lighting',
+        clearPrompt: 'Clear Prompt',
+        seedancePromptTip: 'Tip: Recommended structure → Subject + Motion + Scene + Shot + Style',
+
+        // Reference Images
+        referenceImages: 'Reference Images',
+        firstFrame: 'First Frame',
+        endFrame: 'End Frame',
+        styleReference: 'Style Reference',
+        clear: 'Clear',
+
+        // Toggle labels
+        seed: 'Seed',
+        fixedCamera: 'Fixed Camera',
+        generateAudio: 'Generate Audio',
+        watermark: 'Watermark',
+        returnLastFrame: 'Return Last Frame',
     },
     zh: {
         // General
@@ -566,6 +819,10 @@ const translations: Record<Language, Translations> = {
         delete: '删除',
         new: '新建',
         edit: '编辑',
+        copy: '复制',
+        duplicate: '复制一份',
+        createAsset: '创建素材',
+        processing: '处理中...',
         
         // Workflow Panel
         myWorkflows: '我的工作流',
@@ -600,6 +857,7 @@ const translations: Record<Language, Translations> = {
         
         // Toolbar
         myWorkflowsTitle: '我的工作流',
+        projects: '项目',
         assets: '素材库',
         history: '历史',
         tools: '工具',
@@ -607,6 +865,80 @@ const translations: Record<Language, Translations> = {
         downloadWithoutWatermark: '无水印下载',
         storyboardGenerator: '故事板生成器',
         createScenesWithAI: '用AI创建场景',
+        projectsTitle: '我的项目',
+        newProject: '新建项目',
+        createProject: '创建项目',
+        createNewProject: '创建新项目',
+        editProject: '编辑项目',
+        projectTitleLabel: '项目名称',
+        projectDescriptionLabel: '描述',
+        noProjectsYet: '暂无项目',
+        createFirstProjectHint: '创建你的第一个项目开始使用',
+        updatedAtPrefix: '更新于',
+        searchProjectsPlaceholder: '搜索项目',
+        showAll: '显示全部',
+        gridView: '网格视图',
+        listView: '列表视图',
+        import: '导入',
+        projectNamePlaceholder: '我的项目',
+        projectDescriptionPlaceholder: '可选描述...',
+        justNow: '刚刚',
+        minutesAgo: '分钟前',
+        hoursAgo: '小时前',
+        collaboration: '协作',
+        collaborationTitle: '协作',
+        collaborationTabUsers: '成员',
+        collaborationTabChat: '聊天',
+        collaborationTabInvite: '邀请',
+        collaborationNoOtherUsers: '暂无其他在线成员',
+        collaborationTypeMessage: '输入消息...',
+        collaborationSend: '发送',
+        collaborationInviteTitle: '邀请协作者',
+        collaborationInviteDesc: '分享链接邀请他人加入并协作。',
+        collaborationPermissionLevel: '权限级别',
+        collaborationRoleOwner: '拥有者',
+        collaborationRoleEditor: '可编辑',
+        collaborationRoleViewer: '只读',
+        collaborationRoleMember: '成员',
+        collaborationEditorDesc: '可编辑节点、添加连线并参与聊天',
+        collaborationViewerDesc: '仅可查看并参与聊天',
+        collaborationInviteLink: '邀请链接',
+        collaborationGenerateLink: '点击生成链接...',
+        collaborationCopy: '复制',
+        collaborationCopied: '已复制！',
+        collaborationShare: '分享',
+        collaborationAnyoneCanJoinAs: '任何拥有此链接的人都可以以 {role} 身份加入',
+        collaborationUserJoined: '{name} 加入了项目',
+        collaborationUserLeft: '{name} 离开了项目',
+        authTitleUserCenter: '用户中心',
+        authTitleLogin: '登录',
+        authTitleRegister: '注册',
+        authWelcomeBack: '欢迎回来，{name}',
+        authLoginSubtitle: '欢迎回来，请登录您的账号',
+        authRegisterSubtitle: '创建新账号开始使用',
+        authUsername: '用户名',
+        authUsernamePlaceholder: '请输入用户名',
+        authEmail: '邮箱',
+        authEmailPlaceholder: '请输入邮箱',
+        authPassword: '密码',
+        authPasswordPlaceholder: '请输入密码',
+        authConfirmPassword: '确认密码',
+        authConfirmPasswordPlaceholder: '请再次输入密码',
+        authPasswordMismatch: '两次输入的密码不一致',
+        authPasswordMinLength: '密码长度至少6个字符',
+        authOperationFailed: '操作失败',
+        authNetworkError: '网络错误，请重试',
+        authCreditsBalance: '积分余额',
+        authSubscriptionFree: '免费版',
+        authSubscriptionBasic: '基础版',
+        authSubscriptionPro: '专业版',
+        authSubscriptionEnterprise: '企业版',
+        authSubscriptionAndCredits: '订阅与积分',
+        authAdminPanel: '管理后台',
+        authLogout: '退出登录',
+        authSwitchToRegister: '还没有账号？立即注册',
+        authSwitchToLogin: '已有账号？立即登录',
+        deleteConfirmProject: '确定要删除这个项目吗？',
         
         // Storyboard Generator
         characters: '角色',
@@ -650,13 +982,11 @@ const translations: Record<Language, Translations> = {
         // Asset Library Panel
         assetLibrary: '素材库',
         noAssetsInCategory: '此分类暂无素材。',
-        loading: '加载中...',
         deleteAsset: '删除素材',
         deleteConfirm: '确定删除？',
         yes: '是',
         no: '否',
         deleteAssetTooltip: '删除素材',
-        categoryAll: '全部',
         categoryCharacter: '角色',
         categoryScene: '场景',
         categoryItem: '物品',
@@ -673,7 +1003,6 @@ const translations: Record<Language, Translations> = {
         generatedVideosAppearHere: '生成的视频将显示在这里',
         deleteAssetTitle: '删除素材',
         deleteAssetConfirm: '确定要删除这个{type}吗？此操作无法撤销。',
-        cancel: '取消',
         
         // Storyboard Modal
         chooseReferenceImages: '从素材库中选择最多3张参考图片来引导AI。',
@@ -723,6 +1052,7 @@ const translations: Record<Language, Translations> = {
         duration: '时长',
         model: '模型',
         quality: '质量',
+        referenceSettings: '参考设置',
         loadingModels: '加载模型中...',
         noModelsFound: '未找到模型',
         addModelFilesTip: '将 .safetensors 文件添加到 models/ 目录',
@@ -737,15 +1067,8 @@ const translations: Record<Language, Translations> = {
         // Video generation
         textToVideo: '文字转视频',
         imageToVideo: '图像转视频',
-        frameToFrame: '首尾帧',
-        motionControl: '动作控制',
         
         // Settings
-        resolution: '分辨率',
-        aspectRatio: '宽高比',
-        duration: '时长',
-        quality: '质量',
-        generate: '生成',
         advanced: '高级',
         
         // API Keys
@@ -770,6 +1093,73 @@ const translations: Record<Language, Translations> = {
         seedance15Pro: 'Seedance 1.5 专业版',
         seedance10Pro: 'Seedance 1.0 专业版',
         seedance10Lite: 'Seedance 1.0 轻量版',
+
+        // Context Menu & Nodes
+        upload: '上传',
+        addAssets: '添加素材',
+        addNodes: '添加节点',
+        undo: '撤销',
+        redo: '重做',
+        paste: '粘贴',
+        generateFromNode: '从此节点生成',
+        textGeneration: '文本生成',
+        text: '文本',
+        writeOwnContent: '自己编写',
+        textToImage: '文生图',
+        imageToImage: '图生图',
+        tryTo: '尝试：',
+        inputFrame: '输入帧',
+        generating: '生成中...',
+        readyToAnimate: '准备生成',
+        waitingForInput: '等待输入...',
+        selectModelEnterPrompt: '选择模型并输入提示词',
+        imageGeneration: '图像生成',
+        image: '图像',
+        videoGeneration: '视频生成',
+        video: '视频',
+        videoEditor: '视频编辑',
+        localModelsOpenSource: '本地模型（开源）',
+        localImageModel: '本地图像模型',
+        localVideoModel: '本地视频模型',
+        useDownloadedOpenSourceModels: '使用下载的开源模型',
+        animateDiffSvdMore: 'AnimateDiff, SVD 等',
+        scriptAdcopyBrandText: '文案、广告语、品牌文字',
+        promotionalImagePosterCover: '宣传图、海报、封面',
+
+        // Create Asset
+        addToExisting: '添加到已有',
+        coverLabel: '封面',
+        nameLabel: '名称',
+        assetNamePlaceholder: '素材名称',
+        create: '创建',
+        saving: '保存中...',
+        saved: '已保存！',
+        failed: '失败',
+        writeTextPlaceholder: '在这里输入文本...',
+        shrinkTextArea: '收起输入框',
+        expandTextArea: '展开输入框',
+
+        // Seedance Prompt Helper
+        seedancePromptHelper: 'Seedance 提示词助手',
+        shotType: '镜头类型',
+        motion: '动作',
+        styleLighting: '风格 & 光影',
+        clearPrompt: '清空提示词',
+        seedancePromptTip: '提示：推荐结构 → 主体描述 + 动作描述 + 场景环境 + 镜头语言 + 光影风格',
+
+        // Reference Images
+        referenceImages: '参考图',
+        firstFrame: '首帧',
+        endFrame: '尾帧',
+        styleReference: '风格参考',
+        clear: '清空',
+
+        // Toggle labels
+        seed: '随机种子',
+        fixedCamera: '固定相机',
+        generateAudio: '生成音频',
+        watermark: '添加水印',
+        returnLastFrame: '返回尾帧',
     }
 };
 
@@ -780,7 +1170,7 @@ const translations: Record<Language, Translations> = {
 /**
  * Get translation for a key
  */
-export function t(key: keyof Translations, lang?: Language): string {
+export function t(key: string, lang?: Language): string {
     const language = lang || currentLang;
     return translations[language][key] || translations.en[key] || key;
 }

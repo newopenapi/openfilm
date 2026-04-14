@@ -43,8 +43,19 @@ export interface NodeData {
   frameInputs?: { nodeId: string; order: 'start' | 'end' }[]; // For frame-to-frame: connected image nodes
   videoModel?: string; // Video model version (e.g., 'veo-3.1', 'kling-v2-1')
   videoDuration?: number; // Video duration in seconds (e.g., 5, 6, 8, 10)
-  generateAudio?: boolean; // Whether to generate native audio (Kling 2.6, Veo 3.1)
+  generateAudio?: boolean; // Whether to generate native audio (Kling 2.6, Veo 3.1, Seedance)
   inputUrl?: string; // Input URL for video generation (image-to-video)
+  
+  // Seedance 2.0 Advanced Parameters
+  seed?: number; // Random seed for reproducibility (integer)
+  cameraFixed?: boolean; // Whether to fix camera movement
+  watermark?: boolean; // Whether to add watermark
+  returnLastFrame?: boolean; // Whether to return the last frame
+  styleReferenceNodeId?: string; // Style reference image node ID (多模态参考)
+  
+  // Seedance 2.0 Advanced Parameters
+  referenceImageNodeId?: string; // First frame image node ID (首帧图 - 图生视频的起始画面)
+  endFrameImageNodeId?: string; // End frame image node ID (尾帧图 - 头尾帧视频的结束画面)
 
   // Video Editor specific
   trimStart?: number; // Trim start time in seconds

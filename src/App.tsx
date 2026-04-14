@@ -39,8 +39,10 @@ import { useVideoFrameExtraction } from './hooks/useVideoFrameExtraction';
 import { extractVideoLastFrame } from './utils/videoHelpers';
 import { SelectionBoundingBox } from './components/canvas/SelectionBoundingBox';
 import { WorkflowPanel } from './components/WorkflowPanel';
+import { ProjectList } from './components/ProjectList';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ChatPanel, ChatBubble } from './components/ChatPanel';
+import { AccountPage } from './pages/AccountPage';
 import { ImageEditorModal } from './components/modals/ImageEditorModal';
 import { VideoEditorModal } from './components/modals/VideoEditorModal';
 import { ExpandedMediaModal } from './components/modals/ExpandedMediaModal';
@@ -59,7 +61,7 @@ import { CollaborationPanel } from './components/CollaborationPanel';
 import { CursorOverlay } from './components/CursorOverlay';
 import { AdminPage } from './pages/AdminPage';
 import { collaborationService, CollaborationUser, CursorPosition } from './services/socketService';
-import { isAuthenticated, getCurrentUser, User } from './services/authService';
+import { getCurrentUser, getMe, User, apiRequest, logout } from './services/authService';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -85,6 +87,7 @@ const urlToBase64 = async (url: string): Promise<string> => {
 };
 
 export default function App() {
+  const LAST_PROJECT_ID_KEY = 'last_project_id';
   // ============================================================================
   // STATE
   // ============================================================================
@@ -106,7 +109,10 @@ export default function App() {
   // Auth state (Multi-user) - Force login if not authenticated
   const [isAuthOpen, setIsAuthOpen] = useState(!getCurrentUser());
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(getCurrentUser());
+  const [isProjectListOpen, setIsProjectListOpen] = useState(false);
+  const didPromptProjectRef = useRef(false);
   
   // Collaboration state
   const [isCollaborationOpen, setIsCollaborationOpen] = useState(false);
@@ -147,6 +153,23 @@ export default function App() {
   // ============================================================================
   // COLLABORATION SETUP
   // ============================================================================
+
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentProjectId) return;
+    if (didPromptProjectRef.current) return;
+    didPromptProjectRef.current = true;
+    const lastIdStr = localStorage.getItem(LAST_PROJECT_ID_KEY);
+    const lastId = lastIdStr ? parseInt(lastIdStr, 10) : NaN;
+    if (Number.isFinite(lastId) && lastId > 0) {
+      handleSelectProject({ id: lastId }).catch(() => {
+        localStorage.removeItem(LAST_PROJECT_ID_KEY);
+        setIsProjectListOpen(true);
+      });
+      return;
+    }
+    setIsProjectListOpen(true);
+  }, [currentUser, currentProjectId]);
   
   // Connect to socket when user is authenticated
   useEffect(() => {
@@ -154,33 +177,36 @@ export default function App() {
     
     const connectSocket = async () => {
       try {
+        setOnlineUsers([]);
+        setRemoteCursors(new Map());
         await collaborationService.connect();
         
         // Listen for project users
-        collaborationService.on('projectUsers', (users: CollaborationUser[]) => {
-          setOnlineUsers(users);
-        });
+        const onProjectUsers = (users: CollaborationUser[]) => {
+          const unique = Array.from(new Map(users.map(u => [u.userId, u])).values());
+          setOnlineUsers(unique);
+        };
         
         // Listen for user joined
-        collaborationService.on('userJoined', (user: CollaborationUser) => {
+        const onUserJoined = (user: CollaborationUser) => {
           setOnlineUsers(prev => {
             if (prev.find(u => u.userId === user.userId)) return prev;
             return [...prev, user];
           });
-        });
+        };
         
         // Listen for user left
-        collaborationService.on('userLeft', (user: CollaborationUser) => {
+        const onUserLeft = (user: CollaborationUser) => {
           setOnlineUsers(prev => prev.filter(u => u.userId !== user.userId));
           setRemoteCursors(prev => {
             const newCursors = new Map(prev);
             newCursors.delete(user.userId);
             return newCursors;
           });
-        });
+        };
         
         // Listen for cursor moves
-        collaborationService.on('cursorMoved', (data: { userId: string; username: string; position: CursorPosition }) => {
+        const onCursorMoved = (data: { userId: string; username: string; position: CursorPosition }) => {
           setRemoteCursors(prev => {
             const newCursors = new Map(prev);
             newCursors.set(data.userId, {
@@ -189,17 +215,33 @@ export default function App() {
             });
             return newCursors;
           });
-        });
+        };
+
+        collaborationService.on('projectUsers', onProjectUsers);
+        collaborationService.on('userJoined', onUserJoined);
+        collaborationService.on('userLeft', onUserLeft);
+        collaborationService.on('cursorMoved', onCursorMoved);
         
         console.log('[App] Collaboration socket connected');
+
+        return () => {
+          collaborationService.off('projectUsers', onProjectUsers);
+          collaborationService.off('userJoined', onUserJoined);
+          collaborationService.off('userLeft', onUserLeft);
+          collaborationService.off('cursorMoved', onCursorMoved);
+        };
       } catch (error) {
         console.error('[App] Failed to connect collaboration socket:', error);
       }
     };
     
-    connectSocket();
+    let cleanup: undefined | (() => void);
+    connectSocket().then((c) => {
+      cleanup = typeof c === 'function' ? c : undefined;
+    });
     
     return () => {
+      cleanup?.();
       collaborationService.disconnect();
     };
   }, [currentUser]);
@@ -404,7 +446,22 @@ export default function App() {
 
   // Update saved state after workflow save
   const handleSaveWithTracking = async () => {
-    await handleSaveWorkflow();
+    if (currentProjectId) {
+      await apiRequest(`/user/projects/${currentProjectId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: canvasTitle,
+          data: {
+            title: canvasTitle,
+            nodes,
+            groups,
+            viewport
+          }
+        })
+      });
+    } else {
+      await handleSaveWorkflow();
+    }
     setIsDirty(false);
   };
 
@@ -415,9 +472,34 @@ export default function App() {
     setIsDirty(false);
   };
 
+  const handleSelectProject = async (project: { id: number }) => {
+    ignoreNextChange.current = true;
+    const res: any = await apiRequest(`/user/projects/${project.id}`);
+    const projectData = res?.data?.project;
+    setCurrentProjectId(projectData.id);
+    localStorage.setItem(LAST_PROJECT_ID_KEY, String(projectData.id));
+    setCanvasTitle(projectData.name || 'Untitled Canvas');
+    setEditingTitleValue(projectData.name || 'Untitled Canvas');
+    const data = projectData.data || {};
+    setNodes(data.nodes || []);
+    setGroups(data.groups || []);
+    if (data.viewport) {
+      setViewport(data.viewport);
+    }
+    setSelectedNodeIds([]);
+    setIsProjectListOpen(false);
+    setIsDirty(false);
+  };
+
   const { handleGenerate } = useGeneration({
     nodes,
-    updateNode
+    updateNode,
+    onAfterSuccess: async () => {
+      const latest = await getMe();
+      if (latest) {
+        setCurrentUser(latest);
+      }
+    }
   });
 
   // Keep a ref to handleGenerate so setTimeout callbacks can access the latest version
@@ -435,6 +517,11 @@ export default function App() {
     setCanvasTitle('Untitled Canvas');
     setEditingTitleValue('Untitled Canvas');
     resetWorkflowId(); // Important: ensures new workflow gets a new ID
+    setCurrentProjectId(null);
+    localStorage.removeItem(LAST_PROJECT_ID_KEY);
+    if (currentUser) {
+      setIsProjectListOpen(true);
+    }
     setIsDirty(false);
   };
 
@@ -1061,11 +1148,23 @@ export default function App() {
         <Toolbar
           onAddClick={handleToolbarAdd}
           onWorkflowsClick={handleWorkflowsClick}
+          onProjectsClick={() => {
+            closeWorkflowPanel();
+            closeHistoryPanel();
+            closeAssetLibrary();
+            setIsProjectListOpen(true);
+          }}
           onHistoryClick={handleHistoryClick}
           onAssetsClick={handleAssetsClick}
           onTikTokClick={openTikTokModal}
           onStoryboardClick={storyboardGenerator.openModal}
-          onCollaborationClick={() => setIsCollaborationOpen(!isCollaborationOpen)}
+          onCollaborationClick={() => {
+            if (!currentProjectId) {
+              setIsProjectListOpen(true);
+              return;
+            }
+            setIsCollaborationOpen(!isCollaborationOpen);
+          }}
           onToolsOpen={() => {
             closeWorkflowPanel();
             closeHistoryPanel();
@@ -1073,6 +1172,15 @@ export default function App() {
           }}
           canvasTheme={canvasTheme}
           onlineUsersCount={onlineUsers.length}
+          user={currentUser}
+          onOpenAuth={() => setIsAuthOpen(true)}
+          onOpenAdmin={() => setIsAdminOpen(true)}
+          onOpenAccount={() => setIsAccountOpen(true)}
+          onOpenTutorial={() => window.open('https://open.bsv.vip/', '_blank')}
+          onLogout={async () => {
+            await logout();
+            window.location.reload();
+          }}
         />
       )}
 
@@ -1085,6 +1193,14 @@ export default function App() {
         panelY={workflowPanelY}
         canvasTheme={canvasTheme}
       />
+
+      {isProjectListOpen && currentUser && (
+        <ProjectList
+          onSelectProject={handleSelectProject}
+          onClose={() => setIsProjectListOpen(false)}
+        />
+      )}
+
 
       {/* History Panel */}
       <HistoryPanel
@@ -1183,6 +1299,8 @@ export default function App() {
           onOpenSettings={() => setIsSettingsOpen(true)}
           user={currentUser}
           onOpenAuth={() => setIsAuthOpen(true)}
+          hidePrimaryActions={true}
+          hideUserButton={true}
         />
       )}
 
@@ -1577,10 +1695,14 @@ export default function App() {
         <AdminPage onClose={() => setIsAdminOpen(false)} />
       )}
 
+      {isAccountOpen && (
+        <AccountPage onClose={() => setIsAccountOpen(false)} />
+      )}
+
       {/* Collaboration Panel */}
-      {currentUser && isCollaborationOpen && (
+      {currentUser && isCollaborationOpen && currentProjectId && (
         <CollaborationPanel
-          projectId={(currentProjectId || (workflowId ? parseInt(workflowId) : 0)).toString()}
+          projectId={currentProjectId.toString()}
           onClose={() => setIsCollaborationOpen(false)}
         />
       )}

@@ -13,9 +13,10 @@ import { extractVideoLastFrame } from '../utils/videoHelpers';
 interface UseGenerationProps {
     nodes: NodeData[];
     updateNode: (id: string, updates: Partial<NodeData>) => void;
+    onAfterSuccess?: () => void | Promise<void>;
 }
 
-export const useGeneration = ({ nodes, updateNode }: UseGenerationProps) => {
+export const useGeneration = ({ nodes, updateNode, onAfterSuccess }: UseGenerationProps) => {
     // ============================================================================
     // HELPERS
     // ============================================================================
@@ -176,6 +177,7 @@ export const useGeneration = ({ nodes, updateNode }: UseGenerationProps) => {
                     // Note: aspectRatio is intentionally NOT updated to preserve user's selection
                     errorMessage: undefined
                 });
+                await onAfterSuccess?.();
 
 
             } else if (node.type === NodeType.LOCAL_IMAGE_MODEL) {
@@ -222,6 +224,7 @@ export const useGeneration = ({ nodes, updateNode }: UseGenerationProps) => {
                         resultAspectRatio,
                         errorMessage: undefined
                     });
+                    await onAfterSuccess?.();
                 } else {
                     throw new Error(result.error || 'Local generation failed');
                 }
@@ -314,10 +317,40 @@ export const useGeneration = ({ nodes, updateNode }: UseGenerationProps) => {
                 }
 
                 // Generate video
+                // Get style reference image for Seedance 2.0 multi-modal
+                let styleReferenceBase64: string | undefined;
+                if (node.styleReferenceNodeId) {
+                    const styleRefNode = nodes.find(n => n.id === node.styleReferenceNodeId);
+                    if (styleRefNode?.resultUrl) {
+                        styleReferenceBase64 = styleRefNode.resultUrl;
+                    }
+                }
+
+                // Get first frame image for Seedance 2.0 (图生视频的起始画面)
+                let referenceImageBase64: string | undefined;
+                if (node.referenceImageNodeId) {
+                    const refImageNode = nodes.find(n => n.id === node.referenceImageNodeId);
+                    if (refImageNode?.resultUrl) {
+                        referenceImageBase64 = refImageNode.resultUrl;
+                    }
+                }
+
+                // Get end frame image for Seedance 2.0 (头尾帧视频的结束画面)
+                let endFrameImageBase64: string | undefined;
+                if (node.endFrameImageNodeId) {
+                    const endFrameNode = nodes.find(n => n.id === node.endFrameImageNodeId);
+                    if (endFrameNode?.resultUrl) {
+                        endFrameImageBase64 = endFrameNode.resultUrl;
+                    }
+                }
+
                 const rawResultUrl = await generateVideo({
                     prompt: combinedPrompt,
-                    imageBase64,
-                    lastFrameBase64,
+                    imageBase64: imageBase64 || referenceImageBase64, // Use first frame if set
+                    lastFrameBase64: endFrameImageBase64 || lastFrameBase64, // Use end frame if set
+                    styleReferenceBase64,
+                    referenceImageBase64,
+                    endFrameImageBase64,
                     aspectRatio: node.aspectRatio,
                     resolution: node.resolution,
                     duration: node.videoDuration,
@@ -364,6 +397,7 @@ export const useGeneration = ({ nodes, updateNode }: UseGenerationProps) => {
                     lastFrame,
                     errorMessage: undefined // Clear any previous error
                 });
+                await onAfterSuccess?.();
 
 
             }

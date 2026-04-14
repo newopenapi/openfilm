@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, Trash2, Maximize2, Image as ImageIcon, Video } from 'lucide-react';
 import { t } from '../i18n';
+import { getToken } from '../services/authService';
 
 // ============================================================================
 // CONSTANTS
@@ -88,10 +89,14 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
      */
     const fetchCounts = async () => {
         try {
+            const token = getToken();
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
             // Fetch counts in parallel
+            // Use relative path to go through Vite proxy
             const [imgRes, vidRes] = await Promise.all([
-                fetch('http://localhost:3001/api/assets/images?limit=1'),
-                fetch('http://localhost:3001/api/assets/videos?limit=1')
+                fetch(`/api/assets?type=images&limit=1`, { headers }),
+                fetch(`/api/assets?type=videos&limit=1`, { headers })
             ]);
 
             if (imgRes.ok) {
@@ -139,8 +144,12 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
         }
 
         try {
+            const token = getToken();
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
             const response = await fetch(
-                `http://localhost:3001/api/assets/${activeTab}?limit=${PAGE_SIZE}&offset=${pageOffset}`
+                `/api/assets?type=${activeTab === 'images' ? 'images' : 'videos'}&limit=${PAGE_SIZE}&offset=${pageOffset}`,
+                { headers }
             );
             if (response.ok) {
                 const data = await response.json();
@@ -180,8 +189,13 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
 
     const handleDelete = async (id: string) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/assets/${activeTab}/${id}`, {
-                method: 'DELETE'
+            const token = getToken();
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            const response = await fetch(`/api/assets/${id}`, {
+                method: 'DELETE',
+                headers
             });
             if (response.ok) {
                 setAssets(prev => prev.filter(a => a.id !== id));
@@ -199,8 +213,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
     };
 
     const handleSelectAsset = (asset: AssetMetadata) => {
-        // Construct full URL for the asset
-        const fullUrl = `http://localhost:3001${asset.url}`;
+        // Construct full URL for the asset - use relative path to match current host/port
+        const fullUrl = asset.url;
         onSelectAsset(activeTab, fullUrl, asset.prompt || '', asset.model);
     };
 
@@ -294,14 +308,14 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
                                             >
                                                 {activeTab === 'images' ? (
                                                     <img
-                                                        src={`http://localhost:3001${asset.url}`}
+                                                        src={asset.url}
                                                         alt={asset.prompt || 'Generated image'}
                                                         className="w-full h-full object-cover"
                                                         loading="lazy"
                                                     />
                                                 ) : (
                                                     <video
-                                                        src={`http://localhost:3001${asset.url}`}
+                                                        src={asset.url}
                                                         className="w-full h-full object-cover"
                                                         muted
                                                         preload="metadata"

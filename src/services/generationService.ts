@@ -7,6 +7,8 @@
  * - Video: Veo 3.1, Kling AI
  */
 
+import { getToken } from './authService';
+
 export interface GenerateImageParams {
   prompt: string;
   aspectRatio?: string;
@@ -14,6 +16,7 @@ export interface GenerateImageParams {
   imageBase64?: string | string[]; // Supports single image or array of images
   imageModel?: string; // Image model version (e.g., 'gemini-pro', 'kling-v2')
   nodeId?: string; // ID of the node initiating generation
+  projectId?: number;
   // Kling V1.5 reference settings
   klingReferenceMode?: 'subject' | 'face';
   klingFaceIntensity?: number; // 0-100
@@ -24,13 +27,17 @@ export interface GenerateVideoParams {
   prompt: string;
   imageBase64?: string; // For Image-to-Video (start frame)
   lastFrameBase64?: string; // For frame-to-frame interpolation (end frame)
+  styleReferenceBase64?: string; // For Seedance 2.0 multi-modal reference (style)
+  referenceImageBase64?: string; // For Seedance 2.0 first frame (首帧图)
+  endFrameImageBase64?: string; // For Seedance 2.0 end frame (尾帧图)
   aspectRatio?: string;
   resolution?: string; // Add resolution to params
   duration?: number; // Video duration in seconds (e.g., 5, 6, 8, 10)
   videoModel?: string; // Video model version (e.g., 'veo-3.1', 'kling-v2-1')
   motionReferenceUrl?: string; // For Kling 2.6 motion control
-  generateAudio?: boolean; // For Kling 2.6 and Veo 3.1 native audio (default: true)
+  generateAudio?: boolean; // For Kling 2.6, Veo 3.1, Seedance (default: true)
   nodeId?: string; // ID of the node initiating generation
+  projectId?: number;
   // Seedance 2.0 Advanced Parameters
   seed?: number; // Random seed for reproducibility
   cameraFixed?: boolean; // Whether to fix camera movement
@@ -43,9 +50,13 @@ export interface GenerateVideoParams {
  */
 export const generateImage = async (params: GenerateImageParams): Promise<string> => {
   try {
+    const token = getToken();
     const response = await fetch('/api/generate-image', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
       body: JSON.stringify(params)
     });
 
@@ -71,9 +82,13 @@ export const generateImage = async (params: GenerateImageParams): Promise<string
  */
 export const generateVideo = async (params: GenerateVideoParams): Promise<string> => {
   try {
+    const token = getToken();
     const response = await fetch('/api/generate-video', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
       body: JSON.stringify(params)
     });
 

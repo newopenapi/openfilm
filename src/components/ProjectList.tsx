@@ -3,16 +3,15 @@
  */
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../services/authService';
+import { getLanguage, t } from '../i18n';
+import { LayoutGrid, List, Plus, Search, SlidersHorizontal, Upload, X, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 interface Project {
   id: number;
-  title: string;
-  description: string;
-  role: string;
-  isOwner: boolean;
-  owner?: { username: string };
-  createdAt: string;
-  updatedAt: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ProjectListProps {
@@ -27,10 +26,16 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   onClose 
 }) => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editProjectTitle, setEditProjectTitle] = useState('');
+  const [editProjectDesc, setEditProjectDesc] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -39,10 +44,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
   const loadProjects = async () => {
     setLoading(true);
     try {
-      const res = await apiRequest('/api/projects');
-      if (res.projects) {
-        setProjects(res.projects);
-      }
+      const res: any = await apiRequest('/user/projects?page=1&limit=50');
+      const rows = res?.data?.projects || [];
+      setProjects(rows);
     } catch (error) {
       console.error('Failed to load projects:', error);
     } finally {
@@ -54,9 +58,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({
     if (!newProjectTitle.trim()) return;
     
     try {
-      await apiRequest('/api/projects', {
+      await apiRequest('/user/projects', {
         method: 'POST',
-        body: { title: newProjectTitle, description: newProjectDesc }
+        body: JSON.stringify({ name: newProjectTitle, description: newProjectDesc })
       });
       setShowCreateModal(false);
       setNewProjectTitle('');
@@ -70,106 +74,256 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
   const handleDeleteProject = async (e: React.MouseEvent, projectId: number) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this project?')) return;
+    if (!confirm(t('deleteConfirmProject'))) return;
     
     try {
-      await apiRequest(`/api/projects/${projectId}`, { method: 'DELETE' });
+      await apiRequest(`/user/projects/${projectId}`, { method: 'DELETE' });
       loadProjects();
     } catch (error) {
       alert('Failed to delete project');
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'owner': return 'bg-yellow-100 text-yellow-700';
-      case 'editor': return 'bg-blue-100 text-blue-700';
-      case 'viewer': return 'bg-gray-100 text-gray-700';
-      default: return 'bg-gray-100 text-gray-700';
+  const openEditProject = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation();
+    setEditingProject(project);
+    setEditProjectTitle(project.name || '');
+    setEditProjectDesc(project.description || '');
+  };
+
+  const handleUpdateProject = async () => {
+    if (!editingProject) return;
+    if (!editProjectTitle.trim()) return;
+
+    try {
+      await apiRequest(`/user/projects/${editingProject.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editProjectTitle.trim(),
+          description: editProjectDesc
+        })
+      });
+      setEditingProject(null);
+      setEditProjectTitle('');
+      setEditProjectDesc('');
+      loadProjects();
+    } catch (error) {
+      alert('Failed to update project');
     }
   };
 
+  const filteredProjects = projects.filter((p) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return `${p.name || ''} ${p.description || ''}`.toLowerCase().includes(q);
+  });
+
+  const relativeTime = (iso?: string) => {
+    if (!iso) return '';
+    const dt = new Date(iso);
+    if (Number.isNaN(dt.getTime())) return '';
+    const lang = getLanguage();
+    const diff = Date.now() - dt.getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return t('justNow');
+    if (minutes < 60) return lang === 'en' ? `${minutes} ${t('minutesAgo')}` : `${minutes}${t('minutesAgo')}`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return lang === 'en' ? `${hours} ${t('hoursAgo')}` : `${hours}${t('hoursAgo')}`;
+    const days = Math.floor(hours / 24);
+    return lang === 'en' ? `${days} ${t('daysAgo')}` : `${days}${t('daysAgo')}`;
+  };
+
+  const projectCoverStyle = (id: number) => {
+    const colors = [
+      ['#0ea5e9', '#a855f7'],
+      ['#22c55e', '#06b6d4'],
+      ['#f97316', '#ef4444'],
+      ['#6366f1', '#06b6d4'],
+      ['#eab308', '#f97316'],
+      ['#14b8a6', '#8b5cf6']
+    ];
+    const pair = colors[id % colors.length];
+    return { backgroundImage: `linear-gradient(135deg, ${pair[0]}, ${pair[1]})` } as React.CSSProperties;
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-8 rounded-2xl border border-neutral-800 bg-gradient-to-b from-[#111] to-[#0b0b0b] shadow-2xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-8 pt-8 pb-6">
           <div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">My Projects</h2>
-            <p className="text-sm text-gray-500 mt-1">{projects.length} projects</p>
+            <div className="text-2xl font-semibold text-white">{t('projectsTitle')}</div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('searchProjectsPlaceholder')}
+                className="w-[260px] pl-9 pr-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={() => setShowFilter(!showFilter)}
+                className="px-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 hover:bg-black/50 flex items-center gap-2"
+              >
+                <SlidersHorizontal size={16} className="text-neutral-400" />
+                <span className="text-sm">{t('showAll')}</span>
+              </button>
+              {showFilter && (
+                <div className="absolute right-0 mt-2 w-[180px] rounded-xl border border-neutral-800 bg-[#0f0f0f] shadow-2xl overflow-hidden">
+                  <button
+                    onClick={() => setShowFilter(false)}
+                    className="w-full text-left px-4 py-3 text-sm text-neutral-200 hover:bg-white/5"
+                  >
+                    {t('showAll')}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="inline-flex rounded-lg border border-neutral-800 bg-black/30 p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                title={t('gridView')}
+                className={`w-9 h-9 rounded-md flex items-center justify-center ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
+              >
+                <LayoutGrid size={16} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                title={t('listView')}
+                className={`w-9 h-9 rounded-md flex items-center justify-center ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-neutral-400 hover:text-neutral-200'}`}
+              >
+                <List size={16} />
+              </button>
+            </div>
+
+            <button
+              className="w-10 h-10 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 hover:bg-black/50 flex items-center justify-center"
+              title={t('import')}
+            >
+              <Upload size={18} />
+            </button>
+
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 flex items-center gap-2 font-medium"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              New Project
+              <Plus size={16} />
+              <span className="text-sm">{t('newProject')}</span>
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 hover:bg-black/50 flex items-center justify-center"
+              title={t('cancel')}
+            >
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-8 pb-10">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
-          ) : projects.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-5xl mb-4">📁</div>
-              <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">No projects yet</h3>
-              <p className="text-gray-500 mt-1">Create your first project to get started</p>
+          ) : (
+            <div className={viewMode === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5' : 'space-y-3'}>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                className={`group rounded-2xl border border-neutral-800 bg-white/5 hover:bg-white/10 transition-colors overflow-hidden ${viewMode === 'grid' ? 'aspect-[4/3]' : ''}`}
               >
-                Create Project
+                <div className={viewMode === 'grid' ? 'h-full w-full flex flex-col items-center justify-center gap-3' : 'flex items-center gap-4 px-5 py-4'}>
+                  <span className="w-12 h-12 rounded-full bg-white/10 border border-neutral-800 flex items-center justify-center text-white group-hover:bg-white/15">
+                    <Plus size={20} />
+                  </span>
+                  <span className="text-sm font-medium text-white">{t('newProject')}</span>
+                </div>
               </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {projects.map((project) => (
+
+              {filteredProjects.map((project) => (
                 <div
                   key={project.id}
                   onClick={() => onSelectProject?.(project)}
-                  className="p-4 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 hover:border-blue-300 cursor-pointer transition-all group"
+                  className={`group rounded-2xl border border-neutral-800 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer overflow-hidden ${viewMode === 'grid' ? '' : 'flex items-center justify-between px-5 py-4'}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-800 dark:text-white truncate">
-                          {project.title}
-                        </h3>
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${getRoleBadgeColor(project.role)}`}>
-                          {project.role === 'owner' ? 'Owner' : project.role}
-                        </span>
+                  {viewMode === 'grid' ? (
+                    <>
+                      <div className="h-[120px] w-full" style={projectCoverStyle(project.id)}>
+                        <div className="h-full w-full bg-black/25 flex items-center justify-center">
+                          <div className="text-white/90 font-semibold text-xl tracking-wide">{(project.name || 'P').slice(0, 1).toUpperCase()}</div>
+                        </div>
                       </div>
-                      {project.description && (
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{project.description}</p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-2">
-                        Updated {new Date(project.updatedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {project.isOwner && (
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-white truncate">{project.name}</div>
+                            <div className="mt-1 text-xs text-neutral-500 truncate">
+                              {project.updated_at ? `${t('updatedAtPrefix')} ${relativeTime(project.updated_at)}` : ''}
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => openEditProject(e, project)}
+                            className="opacity-0 group-hover:opacity-100 w-9 h-9 rounded-lg border border-neutral-800 bg-black/30 hover:bg-black/50 flex items-center justify-center text-neutral-200"
+                          >
+                            <MoreHorizontal size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-neutral-800" style={projectCoverStyle(project.id)}>
+                          <div className="h-full w-full bg-black/25 flex items-center justify-center">
+                            <div className="text-white/90 font-semibold">{(project.name || 'P').slice(0, 1).toUpperCase()}</div>
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-white truncate">{project.name}</div>
+                          <div className="mt-1 text-xs text-neutral-500 truncate">
+                            {project.updated_at ? `${t('updatedAtPrefix')} ${relativeTime(project.updated_at)}` : ''}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => openEditProject(e, project)}
+                          className="w-9 h-9 rounded-lg border border-neutral-800 bg-black/30 hover:bg-black/50 flex items-center justify-center text-neutral-200"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteProject(e, project.id)}
+                          className="w-9 h-9 rounded-lg border border-neutral-800 bg-black/30 hover:bg-black/50 flex items-center justify-center text-red-300"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {viewMode === 'grid' && (
+                    <div className="px-4 pb-4 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => openEditProject(e, project)}
+                        className="w-9 h-9 rounded-lg border border-neutral-800 bg-black/30 hover:bg-black/50 flex items-center justify-center text-neutral-200"
+                      >
+                        <Pencil size={16} />
+                      </button>
                       <button
                         onClick={(e) => handleDeleteProject(e, project.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                        className="w-9 h-9 rounded-lg border border-neutral-800 bg-black/30 hover:bg-black/50 flex items-center justify-center text-red-300"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <Trash2 size={16} />
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -178,50 +332,118 @@ export const ProjectList: React.FC<ProjectListProps> = ({
 
         {/* Create Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Create New Project</h3>
-              <div className="space-y-4">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
+            <div className="relative w-full max-w-md rounded-2xl border border-neutral-800 bg-[#0f0f0f] shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+                <div className="text-white font-semibold">{t('createNewProject')}</div>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="w-9 h-9 rounded-full border border-neutral-800 bg-black/30 hover:bg-black/50 flex items-center justify-center text-neutral-200"
+                  title={t('cancel')}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Project Title *
+                  <label className="block text-xs text-neutral-500 mb-1">
+                    {t('projectTitleLabel')} *
                   </label>
                   <input
                     type="text"
                     value={newProjectTitle}
                     onChange={(e) => setNewProjectTitle(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="My Awesome Project"
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-blue-500"
+                    placeholder={t('projectNamePlaceholder')}
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Description
+                  <label className="block text-xs text-neutral-500 mb-1">
+                    {t('projectDescriptionLabel')}
                   </label>
                   <textarea
                     value={newProjectDesc}
                     onChange={(e) => setNewProjectDesc(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="Optional description..."
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-blue-500 resize-none"
+                    placeholder={t('projectDescriptionPlaceholder')}
                     rows={3}
                   />
                 </div>
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 px-4 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 hover:bg-black/50"
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    onClick={handleCreateProject}
+                    disabled={!newProjectTitle.trim()}
+                    className="flex-1 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {t('createProject')}
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-3 mt-6">
+            </div>
+          </div>
+        )}
+
+        {editingProject && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setEditingProject(null)} />
+            <div className="relative w-full max-w-md rounded-2xl border border-neutral-800 bg-[#0f0f0f] shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+                <div className="text-white font-semibold">{t('editProject')}</div>
                 <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                  onClick={() => setEditingProject(null)}
+                  className="w-9 h-9 rounded-full border border-neutral-800 bg-black/30 hover:bg-black/50 flex items-center justify-center text-neutral-200"
+                  title={t('cancel')}
                 >
-                  Cancel
+                  <X size={16} />
                 </button>
-                <button
-                  onClick={handleCreateProject}
-                  disabled={!newProjectTitle.trim()}
-                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Create
-                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs text-neutral-500 mb-1">
+                    {t('projectTitleLabel')} *
+                  </label>
+                  <input
+                    type="text"
+                    value={editProjectTitle}
+                    onChange={(e) => setEditProjectTitle(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-blue-500"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-neutral-500 mb-1">
+                    {t('projectDescriptionLabel')}
+                  </label>
+                  <textarea
+                    value={editProjectDesc}
+                    onChange={(e) => setEditProjectDesc(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 placeholder:text-neutral-600 outline-none focus:border-blue-500 resize-none"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => setEditingProject(null)}
+                    className="flex-1 px-4 py-2 rounded-lg border border-neutral-800 bg-black/30 text-neutral-200 hover:bg-black/50"
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    onClick={handleUpdateProject}
+                    disabled={!editProjectTitle.trim()}
+                    className="flex-1 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {t('save')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

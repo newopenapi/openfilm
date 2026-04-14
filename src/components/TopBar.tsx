@@ -39,6 +39,8 @@ interface TopBarProps {
         role: string;
     } | null;
     onOpenAuth?: () => void;
+    hidePrimaryActions?: boolean;
+    hideUserButton?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -61,7 +63,9 @@ export const TopBar: React.FC<TopBarProps> = ({
     isElectron,
     onOpenSettings,
     user,
-    onOpenAuth
+    onOpenAuth,
+    hidePrimaryActions = false,
+    hideUserButton = false
 }) => {
     const [showNewConfirm, setShowNewConfirm] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -159,26 +163,30 @@ export const TopBar: React.FC<TopBarProps> = ({
                             {currentLang === 'en' ? 'Auto-saved' : '已自动保存'} {new Date(lastAutoSaveTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                     )}
-                    <button
-                        onClick={() => onSave()}
-                        className={`text-sm px-5 py-2.5 rounded-full flex items-center gap-2 transition-colors font-medium border ${canvasTheme === 'dark'
-                            ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-600'
-                            : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-neutral-300 shadow-sm'
-                            }`}
-                    >
-                        <Save size={16} />
-                        {currentLang === 'en' ? 'Save' : '保存'}
-                    </button>
-                    <button
-                        onClick={handleNewClick}
-                        className={`text-sm px-4 py-2.5 rounded-full flex items-center gap-2 transition-colors font-medium border ${canvasTheme === 'dark'
-                            ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-600'
-                            : 'bg-neutral-200 hover:bg-neutral-300 text-neutral-900 border-neutral-300'
-                            }`}
-                    >
-                        <Plus size={16} />
-                        {currentLang === 'en' ? 'New' : '新建'}
-                    </button>
+                    {!hidePrimaryActions && (
+                        <>
+                            <button
+                                onClick={() => onSave()}
+                                className={`text-sm px-5 py-2.5 rounded-full flex items-center gap-2 transition-colors font-medium border ${canvasTheme === 'dark'
+                                    ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-600'
+                                    : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-neutral-300 shadow-sm'
+                                    }`}
+                            >
+                                <Save size={16} />
+                                {currentLang === 'en' ? 'Save' : '保存'}
+                            </button>
+                            <button
+                                onClick={handleNewClick}
+                                className={`text-sm px-4 py-2.5 rounded-full flex items-center gap-2 transition-colors font-medium border ${canvasTheme === 'dark'
+                                    ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-600'
+                                    : 'bg-neutral-200 hover:bg-neutral-300 text-neutral-900 border-neutral-300'
+                                    }`}
+                            >
+                                <Plus size={16} />
+                                {currentLang === 'en' ? 'New' : '新建'}
+                            </button>
+                        </>
+                    )}
                     <button
                         onClick={onToggleTheme}
                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border ${canvasTheme === 'dark'
@@ -206,31 +214,34 @@ export const TopBar: React.FC<TopBarProps> = ({
                             <Settings size={18} />
                         </button>
                     )}
-                    {/* User Button / Login */}
-                    {user ? (
-                        <button
-                            onClick={onOpenAuth}
-                            className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
-                        >
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm">
-                                {user.username.charAt(0).toUpperCase()}
-                            </div>
-                            {user.role === 'admin' && (
-                                <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">
-                                    Admin
-                                </span>
+                    {!hideUserButton && (
+                        <>
+                            {user ? (
+                                <button
+                                    onClick={onOpenAuth}
+                                    className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
+                                >
+                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm">
+                                        {user.username.charAt(0).toUpperCase()}
+                                    </div>
+                                    {user.role === 'admin' && (
+                                        <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">
+                                            Admin
+                                        </span>
+                                    )}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={onOpenAuth}
+                                    className={`text-sm px-4 py-2 rounded-full transition-colors font-medium border ${canvasTheme === 'dark'
+                                        ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500'
+                                        : 'bg-blue-500 hover:bg-blue-400 text-white border-blue-400 shadow-sm'
+                                        }`}
+                                >
+                                    {currentLang === 'en' ? 'Login' : '登录'}
+                                </button>
                             )}
-                        </button>
-                    ) : (
-                        <button
-                            onClick={onOpenAuth}
-                            className={`text-sm px-4 py-2 rounded-full transition-colors font-medium border ${canvasTheme === 'dark'
-                                ? 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500'
-                                : 'bg-blue-500 hover:bg-blue-400 text-white border-blue-400 shadow-sm'
-                                }`}
-                        >
-                            {currentLang === 'en' ? 'Login' : '登录'}
-                        </button>
+                        </>
                     )}
                     {/* Language Toggle Button */}
                     <button

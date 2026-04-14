@@ -46,7 +46,12 @@ const LIBRARY_ASSETS_DIR = path.join(LIBRARY_DIR, 'assets');
 
 // Enable CORS for all routes (must come before static file serving)
 app.use(cors());
-app.use(express.json({ limit: '100mb' }));
+app.use(express.json({
+    limit: '100mb',
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 
 // Serve static assets from library with CORS headers for cross-origin image access
 app.use('/library', (req, res, next) => {
@@ -316,6 +321,10 @@ setupUploadRoutes(app);
 // Mount Subscription & Credits routes
 import subscriptionRoutes from './routes/subscription.cjs';
 app.use('/api/subscription', subscriptionRoutes);
+
+// Mount Payments routes
+import paymentsRoutes from './routes/payments.cjs';
+app.use('/api/payments', paymentsRoutes);
 
 // Mount Models management routes
 setupModelsRoutes(app);
