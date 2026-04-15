@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const COS = require('cos-nodejs-sdk-v5');
 
 // 简单的 COS 签名实现（兼容腾讯云 COS SDK）
 class TencentCOSService {
@@ -13,6 +14,10 @@ class TencentCOSService {
     this.region = config.region;
     this.bucket = config.bucket;
     this.cdnDomain = config.cdnDomain || '';
+    this.cos = new COS({
+      SecretId: this.secretId,
+      SecretKey: this.secretKey
+    });
   }
 
   /**
@@ -60,17 +65,40 @@ class TencentCOSService {
    * 检查文件是否存在（通过 HEAD 请求）
    */
   async exists(key) {
-    // 简化实现，实际项目中可以使用腾讯云 SDK
-    return false;
+    try {
+      await this.cos.headObject({
+        Bucket: this.bucket,
+        Region: this.region,
+        Key: key
+      });
+      return true;
+    } catch (err) {
+      if (err && (err.statusCode === 404 || err.code === 'NoSuchKey')) return false;
+      return false;
+    }
   }
 
   /**
    * 删除文件
    */
   async delete(key) {
-    // 简化实现
-    console.log(`[COS] Delete file: ${key}`);
+    await this.cos.deleteObject({
+      Bucket: this.bucket,
+      Region: this.region,
+      Key: key
+    });
     return true;
+  }
+
+  async uploadBuffer(buffer, key, contentType) {
+    await this.cos.putObject({
+      Bucket: this.bucket,
+      Region: this.region,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType || undefined
+    });
+    return { key, url: this.getUrl(key) };
   }
 }
 
@@ -81,11 +109,11 @@ const initCOS = () => {
   if (cosService) return cosService;
 
   cosService = new TencentCOSService({
-    secretId: process.env.TENCENT_COS_SECRET_ID || '',
-    secretKey: process.env.TENCENT_COS_SECRET_KEY || '',
-    region: process.env.TENCENT_COS_REGION || 'ap-beijing',
-    bucket: process.env.TENCENT_COS_BUCKET || 'openfilm-assets',
-    cdnDomain: process.env.TENCENT_COS_CDN_DOMAIN || ''
+    secretId: process.env.TENCENT_COS_SECRET_ID || process.env.TENCENT_SECRET_ID || '',
+    secretKey: process.env.TENCENT_COS_SECRET_KEY || process.env.TENCENT_SECRET_KEY || '',
+    region: process.env.TENCENT_COS_REGION || process.env.TENCENT_REGION || 'ap-beijing',
+    bucket: process.env.TENCENT_COS_BUCKET || process.env.TENCENT_BUCKET || 'openfilm-assets',
+    cdnDomain: process.env.TENCENT_COS_CDN_DOMAIN || process.env.TENCENT_CDN_DOMAIN || ''
   });
 
   return cosService;

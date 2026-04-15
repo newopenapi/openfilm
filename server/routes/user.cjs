@@ -198,6 +198,17 @@ router.get('/projects', authenticate, async (req, res) => {
 
     const { count, rows } = await Project.findAndCountAll({
       where: { user_id: req.userId },
+      attributes: [
+        'id',
+        'name',
+        'description',
+        'thumbnail',
+        'status',
+        'version',
+        'is_collaborative',
+        'created_at',
+        'updated_at'
+      ],
       limit,
       offset,
       order: [['updated_at', 'DESC']]

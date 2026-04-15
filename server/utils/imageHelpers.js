@@ -6,6 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { saveBuffer as saveBufferToStorage, toDataUrlFromUrl } from '../services/storage.js';
 
 // ============================================================================
 // BASE64 HELPERS
@@ -76,6 +77,22 @@ export function resolveImageToBase64(input) {
     return null;
 }
 
+export async function resolveImageToBase64Async(input) {
+    if (!input) return null;
+    if (input.startsWith('data:')) return input;
+    const asLocal = resolveImageToBase64(input);
+    if (asLocal) return asLocal;
+    if (input.startsWith('http://') || input.startsWith('https://')) {
+        try {
+            const dataUrl = await toDataUrlFromUrl(input);
+            return dataUrl;
+        } catch {
+            return null;
+        }
+    }
+    return null;
+}
+
 /**
  * Extract raw base64 from data URL (removes data:image/xxx;base64, prefix)
  * @param {string} dataUrl - Base64 data URL
@@ -142,6 +159,17 @@ export function saveBufferToFile(buffer, dir, prefix, extension, customId) {
     return { id, path: filePath, url, filename };
 }
 
+export async function saveBuffer(buffer, dir, prefix, extension, customId, contentType) {
+    return await saveBufferToStorage({
+        buffer,
+        dir,
+        prefix,
+        extension,
+        customId,
+        contentType
+    });
+}
+
 /**
  * Save base64 data URL to file and return library URL
  * Used to sanitize workflow nodes before saving
@@ -176,6 +204,31 @@ export function saveBase64ToFile(dataUrl, imagesDir, videosDir) {
         const buffer = Buffer.from(base64Data, 'base64');
         const saved = saveBufferToFile(buffer, videosDir, 'wf_vid', ext);
         console.log(`  Workflow sanitize: saved video ${saved.filename} (${(buffer.length / 1024 / 1024).toFixed(2)} MB)`);
+        return saved.url;
+    }
+
+    return dataUrl;
+}
+
+export async function saveBase64ToStorageUrl(dataUrl, imagesDir, videosDir) {
+    if (!dataUrl || typeof dataUrl !== 'string') return dataUrl;
+    if (!dataUrl.startsWith('data:')) return dataUrl;
+
+    const imageMatch = dataUrl.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/);
+    if (imageMatch) {
+        const ext = imageMatch[1] === 'jpeg' ? 'jpg' : imageMatch[1];
+        const base64Data = imageMatch[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        const saved = await saveBuffer(buffer, imagesDir, 'wf_img', ext);
+        return saved.url;
+    }
+
+    const videoMatch = dataUrl.match(/^data:video\/(mp4|webm);base64,(.+)$/);
+    if (videoMatch) {
+        const ext = videoMatch[1];
+        const base64Data = videoMatch[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        const saved = await saveBuffer(buffer, videosDir, 'wf_vid', ext);
         return saved.url;
     }
 

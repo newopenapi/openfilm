@@ -16,10 +16,13 @@ import { t } from '../../i18n';
 // ============================================================================
 
 const IMAGE_MODELS = [
+    { id: 'gemini-2.5-flash-image', name: 'NanoBanana', provider: 'nanobanana' },
+    { id: 'gemini-3-pro-image-preview', name: 'NanoBanana Pro', provider: 'nanobanana' },
+    { id: 'gemini-3.1-flash-image-preview', name: 'NanoBanana 2', provider: 'nanobanana' },
     { id: 'gpt-image-1.5', name: 'GPT Image 1.5', provider: 'openai' },
-    { id: 'gemini-pro', name: 'Nano Banana Pro', provider: 'google' },
     { id: 'kling-v1-5', name: 'Kling V1.5', provider: 'kling' },
     { id: 'kling-v2-1', name: 'Kling V2.1', provider: 'kling' },
+    { id: 'seedream-3.0', name: 'Seedream 3.0', provider: 'volcano' }
 ];
 
 // ============================================================================

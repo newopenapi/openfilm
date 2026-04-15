@@ -459,6 +459,15 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
         if (videoGenerationMode === 'text-to-video') return model.supportsTextToVideo;
         if (videoGenerationMode === 'image-to-video') return model.supportsImageToVideo;
         return model.supportsMultiImage; // frame-to-frame
+    }).sort((a, b) => {
+        const aIsSeedance = a.id.startsWith('seedance-') ? 1 : 0;
+        const bIsSeedance = b.id.startsWith('seedance-') ? 1 : 0;
+        if (aIsSeedance !== bIsSeedance) return bIsSeedance - aIsSeedance;
+        if (aIsSeedance && bIsSeedance) {
+            if (a.id === 'seedance-2.0') return -1;
+            if (b.id === 'seedance-2.0') return 1;
+        }
+        return 0;
     });
 
     // Auto-select first available video model when current is no longer valid
@@ -539,6 +548,15 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
         if (inputCount === 0) return true; // Text-to-image: all models work
         if (inputCount === 1) return model.supportsImageToImage; // Single ref: filter out V2.1
         return model.supportsMultiImage; // Multi-ref: filter out V1, V1.5, V2 New
+    }).sort((a, b) => {
+        const aIsNano = a.provider === 'nanobanana' ? 1 : 0;
+        const bIsNano = b.provider === 'nanobanana' ? 1 : 0;
+        if (aIsNano !== bIsNano) return bIsNano - aIsNano;
+        if (aIsNano && bIsNano) {
+            if (a.id === 'gemini-2.5-flash-image') return -1;
+            if (b.id === 'gemini-2.5-flash-image') return 1;
+        }
+        return 0;
     });
 
     // Auto-select first available model when current model is no longer valid for the mode

@@ -35,6 +35,10 @@ const VIDEO_DURATIONS = [5, 6, 8, 10];
 const VIDEO_RESOLUTIONS = ["Auto", "1080p", "768p", "720p", "512p"];
 
 const VIDEO_MODELS = [
+    // Volcano Engine (Seedance) models - ByteDance
+    { id: 'seedance-2.0', name: 'Seedance 2.0', provider: 'volcano', durations: [5, 10, 15], resolutions: ['720p', '1080p'] },
+    { id: 'seedance-2.0-fast', name: 'Seedance 2.0 Fast', provider: 'volcano', durations: [5, 10], resolutions: ['720p', '1080p'] },
+    { id: 'seedance-1.5-pro', name: 'Seedance 1.5 Pro', provider: 'volcano', durations: [5, 10], resolutions: ['720p', '1080p'] },
     {
         id: 'veo-3.1',
         name: 'Veo 3.1',
@@ -80,9 +84,9 @@ export const StoryboardVideoModal: React.FC<StoryboardVideoModalProps> = ({
 
     const [prompts, setPrompts] = useState<Record<string, string>>({});
     const [settings, setSettings] = useState({
-        model: 'veo-3.1',
-        duration: 4, // Default to 4s for Veo
-        resolution: '720p' // Safe default
+        model: 'seedance-2.0',
+        duration: 5,
+        resolution: '720p'
     });
     const [generatingPrompts, setGeneratingPrompts] = useState<Record<string, boolean>>({});
     const [optimizingPrompts, setOptimizingPrompts] = useState<Record<string, boolean>>({});

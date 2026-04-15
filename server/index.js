@@ -20,6 +20,7 @@ import localModelsRoutes from './routes/local-models.js';
 import storyboardRoutes from './routes/storyboard.js';
 import { setupAuthRoutes, setupAdminRoutes, setupUserRoutes, setupUploadRoutes, setupModelsRoutes } from './routes-multiuser/index.js';
 import { initSocketIO } from './services/socketio.cjs';
+import { saveBase64ToStorageUrl } from './utils/imageHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,38 +191,14 @@ app.locals.LIBRARY_DIR = LIBRARY_DIR;
  * @param {string} dataUrl - Base64 data URL (e.g., data:image/png;base64,...)
  * @returns {{ url: string } | null} - File URL path or null if not base64
  */
-function saveBase64ToFile(dataUrl) {
+async function saveBase64ToFile(dataUrl) {
     if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
         return null;
     }
-
-    const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (!matches) return null;
-
-    const mimeType = matches[1];
-    const base64Data = matches[2];
-
     try {
-        const buffer = Buffer.from(base64Data, 'base64');
-        const id = `wf_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-
-        let filename, targetDir, urlType;
-
-        if (mimeType.startsWith('video/')) {
-            filename = `${id}.mp4`;
-            targetDir = VIDEOS_DIR;
-            urlType = 'videos';
-        } else {
-            const ext = mimeType === 'image/jpeg' ? 'jpg' : 'png';
-            filename = `${id}.${ext}`;
-            targetDir = IMAGES_DIR;
-            urlType = 'images';
-        }
-
-        fs.writeFileSync(path.join(targetDir, filename), buffer);
-        console.log(`  [Workflow Sanitize] Saved base64 → /library/${urlType}/${filename}`);
-
-        return { url: `/library/${urlType}/${filename}` };
+        const url = await saveBase64ToStorageUrl(dataUrl, IMAGES_DIR, VIDEOS_DIR);
+        if (!url || url === dataUrl) return null;
+        return { url };
     } catch (err) {
         console.error('  [Workflow Sanitize] Failed to save base64:', err.message);
         return null;
@@ -234,52 +211,49 @@ function saveBase64ToFile(dataUrl) {
  * @param {Array} nodes - Array of workflow nodes
  * @returns {Array} - Sanitized nodes with file URLs instead of base64
  */
-function sanitizeWorkflowNodes(nodes) {
+async function sanitizeWorkflowNodes(nodes) {
     if (!nodes || !Array.isArray(nodes)) return nodes;
 
     let sanitizedCount = 0;
 
-    const sanitized = nodes.map(node => {
+    const sanitized = [];
+    for (const node of nodes) {
         const cleanNode = { ...node };
 
-        // Check resultUrl for base64 data
         if (cleanNode.resultUrl && cleanNode.resultUrl.startsWith('data:')) {
-            const saved = saveBase64ToFile(cleanNode.resultUrl);
+            const saved = await saveBase64ToFile(cleanNode.resultUrl);
             if (saved) {
                 cleanNode.resultUrl = saved.url;
                 sanitizedCount++;
             }
         }
 
-        // Check lastFrame for base64 data (video nodes)
         if (cleanNode.lastFrame && cleanNode.lastFrame.startsWith('data:')) {
-            const saved = saveBase64ToFile(cleanNode.lastFrame);
+            const saved = await saveBase64ToFile(cleanNode.lastFrame);
             if (saved) {
                 cleanNode.lastFrame = saved.url;
                 sanitizedCount++;
             }
         }
 
-        // Check editorCanvasData for base64 data (Image Editor)
         if (cleanNode.editorCanvasData && cleanNode.editorCanvasData.startsWith('data:')) {
-            const saved = saveBase64ToFile(cleanNode.editorCanvasData);
+            const saved = await saveBase64ToFile(cleanNode.editorCanvasData);
             if (saved) {
                 cleanNode.editorCanvasData = saved.url;
                 sanitizedCount++;
             }
         }
 
-        // Check editorBackgroundUrl for base64 data (Image Editor)
         if (cleanNode.editorBackgroundUrl && cleanNode.editorBackgroundUrl.startsWith('data:')) {
-            const saved = saveBase64ToFile(cleanNode.editorBackgroundUrl);
+            const saved = await saveBase64ToFile(cleanNode.editorBackgroundUrl);
             if (saved) {
                 cleanNode.editorBackgroundUrl = saved.url;
                 sanitizedCount++;
             }
         }
 
-        return cleanNode;
-    });
+        sanitized.push(cleanNode);
+    }
 
     if (sanitizedCount > 0) {
         console.log(`[Workflow Sanitize] Converted ${sanitizedCount} base64 field(s) to file URLs`);
@@ -551,7 +525,7 @@ app.post('/api/workflows', async (req, res) => {
 
         // Sanitize nodes: convert any base64 data to file URLs before saving
         if (workflow.nodes) {
-            workflow.nodes = sanitizeWorkflowNodes(workflow.nodes);
+            workflow.nodes = await sanitizeWorkflowNodes(workflow.nodes);
         }
 
         fs.writeFileSync(filePath, JSON.stringify(workflow, null, 2));

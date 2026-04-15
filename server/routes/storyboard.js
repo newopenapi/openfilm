@@ -7,6 +7,7 @@
 
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { saveBuffer } from '../utils/imageHelpers.js';
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.post('/generate-scripts', async (req, res) => {
     try {
         const { story, characterDescriptions, sceneCount, referenceImages, characterImages } = req.body;
         const { GEMINI_API_KEY } = req.app.locals;
-        const { resolveImageToBase64 } = await import('../utils/imageHelpers.js');
+        const { resolveImageToBase64Async } = await import('../utils/imageHelpers.js');
 
         if (!GEMINI_API_KEY) {
             return res.status(500).json({
@@ -184,7 +185,7 @@ Respond ONLY with valid JSON, no other text.`;
             console.log('[Storyboard] Processing reference images for scripts...');
             for (const ref of referenceImages) {
                 try {
-                    const fullDataUrl = await resolveImageToBase64(ref.url);
+                    const fullDataUrl = await resolveImageToBase64Async(ref.url);
                     if (fullDataUrl && fullDataUrl.startsWith('data:')) {
                         const matches = fullDataUrl.match(/^data:(.+);base64,(.+)$/);
                         if (matches) {
@@ -230,7 +231,7 @@ Respond ONLY with valid JSON, no other text.`;
             console.log('[Storyboard] Processing character images for scripts...');
             for (const [name, url] of Object.entries(characterImages)) {
                 try {
-                    const fullDataUrl = await resolveImageToBase64(url);
+                    const fullDataUrl = await resolveImageToBase64Async(url);
                     if (fullDataUrl && fullDataUrl.startsWith('data:')) {
                         const matches = fullDataUrl.match(/^data:(.+);base64,(.+)$/);
                         if (matches) {
@@ -317,7 +318,7 @@ router.post('/brainstorm-story', async (req, res) => {
     try {
         const { characterDescriptions, genre, referenceImages, characterImages } = req.body;
         const { GEMINI_API_KEY } = req.app.locals;
-        const { resolveImageToBase64 } = await import('../utils/imageHelpers.js');
+        const { resolveImageToBase64Async } = await import('../utils/imageHelpers.js');
 
         if (!GEMINI_API_KEY) {
             return res.status(500).json({
@@ -361,7 +362,7 @@ Respond with ONLY the story synopsis, no additional text or formatting.`;
             console.log('[Storyboard] Processing reference images for brainstorming...');
             for (const ref of referenceImages) {
                 try {
-                    const fullDataUrl = await resolveImageToBase64(ref.url);
+                    const fullDataUrl = await resolveImageToBase64Async(ref.url);
                     if (fullDataUrl && fullDataUrl.startsWith('data:')) {
                         const matches = fullDataUrl.match(/^data:(.+);base64,(.+)$/);
                         if (matches) {
@@ -383,7 +384,7 @@ Respond with ONLY the story synopsis, no additional text or formatting.`;
         else if (characterImages && Object.keys(characterImages).length > 0) {
             for (const [name, url] of Object.entries(characterImages)) {
                 try {
-                    const fullDataUrl = await resolveImageToBase64(url);
+                    const fullDataUrl = await resolveImageToBase64Async(url);
                     if (fullDataUrl && fullDataUrl.startsWith('data:')) {
                         const matches = fullDataUrl.match(/^data:(.+);base64,(.+)$/);
                         if (matches) {
@@ -493,7 +494,7 @@ router.post('/generate-composite', async (req, res) => {
     try {
         const { scripts, styleAnchor, characterDNA, sceneCount, referenceImages, characterImages } = req.body;
         const { GEMINI_API_KEY } = req.app.locals;
-        const { resolveImageToBase64 } = await import('../utils/imageHelpers.js');
+        const { resolveImageToBase64Async } = await import('../utils/imageHelpers.js');
 
         if (!GEMINI_API_KEY) {
             return res.status(500).json({
@@ -540,7 +541,7 @@ router.post('/generate-composite', async (req, res) => {
 
                 try {
                     console.log(`[Storyboard] Resolving image for: ${ref.name} (${ref.category})`);
-                    const base64Data = resolveImageToBase64(ref.url);
+                    const base64Data = await resolveImageToBase64Async(ref.url);
                     if (base64Data) {
                         const matches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
                         if (matches) {
@@ -607,7 +608,7 @@ router.post('/generate-composite', async (req, res) => {
 
                 try {
                     console.log(`[Storyboard] Resolving image for: ${name}`);
-                    const base64Data = resolveImageToBase64(url);
+                    const base64Data = await resolveImageToBase64Async(url);
                     if (base64Data) {
                         const matches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
                         if (matches) {
@@ -756,15 +757,9 @@ CRITICAL:
             if (part.inlineData) {
                 // Save the image
                 const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
-                const timestamp = Date.now();
-                const fileName = `storyboard_composite_${timestamp}.png`;
-                const fs = await import('fs/promises');
-                const path = await import('path');
                 const assetsDir = req.app.locals.IMAGES_DIR || './library/images';
-                const filePath = path.join(assetsDir, fileName);
-
-                await fs.writeFile(filePath, imageBuffer);
-                imageUrl = `/library/images/${fileName}`;
+                const saved = await saveBuffer(imageBuffer, assetsDir, 'storyboard_composite', 'png');
+                imageUrl = saved.url;
                 console.log(`[Storyboard] Composite image saved: ${imageUrl}`);
                 break;
             }

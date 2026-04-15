@@ -18,7 +18,7 @@ import { generateOpenAIImage } from '../services/openai.js';
 import { generateVolcanoVideo } from '../services/volcano.js';
 import { generateNanoBananaImage } from '../services/nanobanana.js';
 import { generateDoubaoImage } from '../services/doubao.js';
-import { resolveImageToBase64, saveBufferToFile } from '../utils/imageHelpers.js';
+import { resolveImageToBase64Async, saveBuffer } from '../utils/imageHelpers.js';
 import { User, CreditTransaction, AIModel } from '../models/index.cjs';
 import { getRequiredCreditsForModel } from '../services/billing.js';
 import { authenticateToken } from '../middleware/auth.cjs';
@@ -97,7 +97,8 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
             let resolvedImages = null;
             if (rawImageBase64) {
                 const rawImages = Array.isArray(rawImageBase64) ? rawImageBase64 : [rawImageBase64];
-                resolvedImages = rawImages.map(img => resolveImageToBase64(img)).filter(Boolean);
+                const resolved = await Promise.all(rawImages.map(img => resolveImageToBase64Async(img)));
+                resolvedImages = resolved.filter(Boolean);
             }
 
             let klingImageUrl;
@@ -173,7 +174,8 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
             let imageBase64Array = null;
             if (rawImageBase64) {
                 const rawImages = Array.isArray(rawImageBase64) ? rawImageBase64 : [rawImageBase64];
-                imageBase64Array = rawImages.map(img => resolveImageToBase64(img)).filter(Boolean);
+                const resolved = await Promise.all(rawImages.map(img => resolveImageToBase64Async(img)));
+                imageBase64Array = resolved.filter(Boolean);
             }
 
             imageBuffer = await generateOpenAIImage({
@@ -199,7 +201,8 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
             let imageBase64ArrayNb = null;
             if (rawImageBase64) {
                 const rawImages = Array.isArray(rawImageBase64) ? rawImageBase64 : [rawImageBase64];
-                imageBase64ArrayNb = rawImages.map(img => resolveImageToBase64(img)).filter(Boolean);
+                const resolved = await Promise.all(rawImages.map(img => resolveImageToBase64Async(img)));
+                imageBase64ArrayNb = resolved.filter(Boolean);
             }
 
             const nanobananaResult = await generateNanoBananaImage({
@@ -235,7 +238,7 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
             console.log(`Using Doubao Seedream model: ${imageModel}`);
 
             // Resolve reference image if provided
-            const refImageBase64 = rawImageBase64 ? resolveImageToBase64(rawImageBase64) : null;
+            const refImageBase64 = rawImageBase64 ? await resolveImageToBase64Async(rawImageBase64) : null;
 
             // Generate image using Doubao Seedream API
             const seedreamUrls = await generateDoubaoImage({
@@ -271,7 +274,8 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
             let imageBase64Array = null;
             if (rawImageBase64) {
                 const rawImages = Array.isArray(rawImageBase64) ? rawImageBase64 : [rawImageBase64];
-                imageBase64Array = rawImages.map(img => resolveImageToBase64(img)).filter(Boolean);
+                const resolved = await Promise.all(rawImages.map(img => resolveImageToBase64Async(img)));
+                imageBase64Array = resolved.filter(Boolean);
             }
 
             imageBuffer = await generateGeminiImage({
@@ -284,7 +288,7 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
         }
 
         // Save to library - use unique filename to preserve previous generations
-        const saved = saveBufferToFile(imageBuffer, IMAGES_DIR, 'img', imageFormat);
+        const saved = await saveBuffer(imageBuffer, IMAGES_DIR, 'img', imageFormat);
 
         // Determine metadata ID: use nodeId for recovery if available, otherwise use file ID
         const metadataId = nodeId || saved.id;
@@ -293,6 +297,9 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
         const metadata = {
             id: metadataId,  // Must match the filename for delete API to find it
             filename: saved.filename,
+            storageType: saved.storageType,
+            key: saved.key,
+            url: saved.url,
             prompt: prompt,
             model: imageModel || 'gemini-pro',
             createdAt: new Date().toISOString(),
@@ -375,16 +382,12 @@ router.post('/generate-video', authenticateToken, async (req, res) => {
             });
         }
 
-        // Resolve file URLs to base64
-
-        // Resolve file URLs to base64
-        const imageBase64 = resolveImageToBase64(rawImageBase64);
-        const lastFrameBase64 = resolveImageToBase64(rawLastFrameBase64);
-        const styleReferenceBase64 = resolveImageToBase64(rawStyleReferenceBase64);
-        const motionReferenceUrl = resolveImageToBase64(rawMotionReferenceUrl);
-        // Seedance 2.0 first frame and end frame
-        const referenceImageBase64 = resolveImageToBase64(rawReferenceImageBase64);
-        const endFrameImageBase64 = resolveImageToBase64(rawEndFrameImageBase64);
+        const imageBase64 = rawImageBase64 ? await resolveImageToBase64Async(rawImageBase64) : null;
+        const lastFrameBase64 = rawLastFrameBase64 ? await resolveImageToBase64Async(rawLastFrameBase64) : null;
+        const styleReferenceBase64 = rawStyleReferenceBase64 ? await resolveImageToBase64Async(rawStyleReferenceBase64) : null;
+        const motionReferenceUrl = rawMotionReferenceUrl ? await resolveImageToBase64Async(rawMotionReferenceUrl) : null;
+        const referenceImageBase64 = rawReferenceImageBase64 ? await resolveImageToBase64Async(rawReferenceImageBase64) : null;
+        const endFrameImageBase64 = rawEndFrameImageBase64 ? await resolveImageToBase64Async(rawEndFrameImageBase64) : null;
 
         // Determine provider
         const isKlingModel = videoModel && videoModel.startsWith('kling-');
@@ -587,7 +590,7 @@ router.post('/generate-video', authenticateToken, async (req, res) => {
         }
 
         // Save to library - use unique filename to preserve previous generations
-        const saved = saveBufferToFile(videoBuffer, VIDEOS_DIR, 'vid', 'mp4');
+        const saved = await saveBuffer(videoBuffer, VIDEOS_DIR, 'vid', 'mp4');
 
         // Determine metadata ID: use nodeId for recovery if available, otherwise use file ID
         const metadataId = nodeId || saved.id;
@@ -596,6 +599,9 @@ router.post('/generate-video', authenticateToken, async (req, res) => {
         const metadata = {
             id: metadataId,  // Must match the filename for delete API to find it
             filename: saved.filename,
+            storageType: saved.storageType,
+            key: saved.key,
+            url: saved.url,
             prompt: prompt,
             model: videoModel || 'veo-3.1',
             aspectRatio: aspectRatio || 'Auto',
