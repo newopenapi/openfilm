@@ -300,6 +300,10 @@ app.use('/api/subscription', subscriptionRoutes);
 import paymentsRoutes from './routes/payments.cjs';
 app.use('/api/payments', paymentsRoutes);
 
+// Mount Portrait Assets routes
+import portraitRoutes from './routes/portrait.cjs';
+app.use('/api/portrait', portraitRoutes);
+
 // Mount Models management routes
 setupModelsRoutes(app);
 

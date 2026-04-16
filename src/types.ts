@@ -56,6 +56,7 @@ export interface NodeData {
   // Seedance 2.0 Advanced Parameters
   referenceImageNodeId?: string; // First frame image node ID (首帧图 - 图生视频的起始画面)
   endFrameImageNodeId?: string; // End frame image node ID (尾帧图 - 头尾帧视频的结束画面)
+  portraitAssetId?: string; // Real-person portrait asset ID for Seedance (asset://<id>)
 
   // Video Editor specific
   trimStart?: number; // Trim start time in seconds

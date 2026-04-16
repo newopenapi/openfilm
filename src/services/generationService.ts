@@ -43,6 +43,7 @@ export interface GenerateVideoParams {
   cameraFixed?: boolean; // Whether to fix camera movement
   watermark?: boolean; // Whether to add watermark
   returnLastFrame?: boolean; // Whether to return the last frame
+  portraitAssetId?: string; // Real-person portrait asset ID for Seedance (asset://<id>)
 }
 
 /**

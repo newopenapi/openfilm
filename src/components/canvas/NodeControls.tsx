@@ -7,12 +7,14 @@
  */
 
 import React, { useState, useRef, useEffect, memo } from 'react';
-import { Sparkles, Banana, Settings2, Check, ChevronDown, ChevronUp, GripVertical, Image as ImageIcon, Film, Clock, Expand, Shrink, Monitor, Crop, HardDrive, X, Palette } from 'lucide-react';
+import { Sparkles, Banana, Settings2, Check, ChevronDown, ChevronUp, GripVertical, Image as ImageIcon, Film, Clock, Expand, Shrink, Monitor, Crop, HardDrive, X, Palette, RefreshCw, User } from 'lucide-react';
+import { SeedanceComplianceLibraryModal } from '../modals/SeedanceComplianceLibraryModal';
 import { NodeData, NodeStatus, NodeType } from '../../types';
 import { OpenAIIcon, GoogleIcon, KlingIcon, HailuoIcon, VolcanoIcon } from '../icons/BrandIcons';
 import { useFaceDetection } from '../../hooks/useFaceDetection';
 import { ChangeAnglePanel } from './ChangeAnglePanel';
 import { LocalModel, getLocalModels } from '../../services/localModelService';
+import { apiRequest } from '../../services/authService';
 import { t } from '../../i18n';
 
 interface NodeControlsProps {
@@ -453,6 +455,29 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
             : (inputUrl || imageInputCount > 0) ? 'image-to-video'
                 : 'text-to-video';
 
+    const [portraitAssets, setPortraitAssets] = useState<Array<{ assetId: string; name?: string; status?: string; assetUri: string }>>([]);
+    const [isPortraitLoading, setIsPortraitLoading] = useState(false);
+    const [isComplianceLibraryOpen, setIsComplianceLibraryOpen] = useState(false);
+    const isSeedanceVideoModel = !!data.videoModel?.startsWith('seedance-');
+
+    const fetchPortraitAssets = async () => {
+        if (!isSeedanceVideoModel) return;
+        setIsPortraitLoading(true);
+        try {
+            const r: any = await apiRequest('/portrait/assets');
+            setPortraitAssets(r.items || []);
+        } catch {
+            setPortraitAssets([]);
+        } finally {
+            setIsPortraitLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isVideoNode || !isSeedanceVideoModel) return;
+        fetchPortraitAssets();
+    }, [isVideoNode, isSeedanceVideoModel]);
+
     // Filter video models based on mode
     const availableVideoModels = VIDEO_MODELS.filter(model => {
         if (videoGenerationMode === 'motion-control') return model.id === 'kling-v2-6'; // Only Kling 2.6 for now
@@ -674,6 +699,7 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
     }
 
     return (
+        <>
         <div
             className={`p-4 rounded-2xl shadow-2xl cursor-default w-full transition-colors duration-300 ${isDark ? 'bg-[#1a1a1a] border border-neutral-800' : 'bg-white border border-neutral-200'}`}
             style={{
@@ -1444,6 +1470,53 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                         {t('referenceImages')}
                     </div>
 
+                    {data.videoModel?.startsWith('seedance-') && (
+                        <div className="mb-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2 text-[10px] text-neutral-400 uppercase tracking-wider font-medium">
+                                    <User size={12} className="text-emerald-400" />
+                                    {t('portraitAssets')}
+                                </div>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); fetchPortraitAssets(); }}
+                                    disabled={isPortraitLoading}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg border border-neutral-700/50 bg-neutral-900/40 text-neutral-200 hover:bg-neutral-900/60 text-[10px] disabled:opacity-50"
+                                >
+                                    <RefreshCw size={12} className={isPortraitLoading ? 'animate-spin' : ''} />
+                                    {t('refresh')}
+                                </button>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <select
+                                    value={data.portraitAssetId || ''}
+                                    onChange={(e) => onUpdate(data.id, { portraitAssetId: e.target.value || undefined })}
+                                    className="flex-1 px-3 py-2 rounded-lg border border-neutral-700/50 bg-neutral-900/40 text-neutral-200 text-xs outline-none focus:border-emerald-500"
+                                >
+                                    <option value="">{t('selectPortraitAsset')}</option>
+                                    {portraitAssets.length === 0 && (
+                                        <option value="" disabled>{t('noPortraitAssets')}</option>
+                                    )}
+                                    {portraitAssets.map((a) => (
+                                        <option key={a.assetId} value={a.assetId} disabled={a.status !== 'Active'}>
+                                            {(a.name || a.assetId).slice(0, 32)}{a.status ? ` (${a.status})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsComplianceLibraryOpen(true);
+                                    }}
+                                    className="px-3 py-2 rounded-lg border border-neutral-700/50 bg-neutral-800/50 text-neutral-200 text-xs hover:bg-neutral-800 transition-colors"
+                                    title={t('managePortraitAssets')}
+                                >
+                                    {t('manage')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-3 gap-2">
                         {/* First Frame (首帧) */}
                         <div className="space-y-1.5">
@@ -1875,7 +1948,21 @@ const NodeControlsComponent: React.FC<NodeControlsProps> = ({
                 )
             }
         </div >
-    );
+
+    {/* Seedance Compliance Library Modal */}
+    <SeedanceComplianceLibraryModal
+        isOpen={isComplianceLibraryOpen}
+        onClose={() => setIsComplianceLibraryOpen(false)}
+        selectedAssetId={data.portraitAssetId}
+        onSelect={(assetId) => {
+            onUpdate(data.id, { portraitAssetId: assetId });
+            setIsComplianceLibraryOpen(false);
+            // Refresh assets list after managing
+            fetchPortraitAssets();
+        }}
+    />
+  </>
+);
 };
 
 // Memoize to prevent re-renders when parent state changes

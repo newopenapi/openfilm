@@ -70,6 +70,13 @@ interface Translations {
     duplicate: string;
     createAsset: string;
     processing: string;
+    refresh: string;
+    audio: string;
+    comingSoon: string;
+    seedanceComplianceLibrary: string;
+    recordNewRealPerson: string;
+    startVerification: string;
+    portraitNotVerified: string;
     
     // Workflow Panel
     myWorkflows: string;
@@ -185,6 +192,9 @@ interface Translations {
         authLogout: string;
         authSwitchToRegister: string;
         authSwitchToLogin: string;
+        portraitAssets: string;
+        selectPortraitAsset: string;
+        noPortraitAssets: string;
         deleteConfirmProject: string;
         
         // Storyboard Generator
@@ -427,6 +437,14 @@ const translations: Record<Language, Translations> = {
         duplicate: 'Duplicate',
         createAsset: 'Create Asset',
         processing: 'Processing...',
+        refresh: 'Refresh',
+        audio: 'Audio',
+        comingSoon: 'Coming soon',
+        seedanceComplianceLibrary: 'Seedance 2.0 Compliance Library',
+        recordNewRealPerson: 'Add a new real person',
+        startVerification: 'Start verification',
+        portraitNotVerified: 'Not verified',
+        selectedCount: 'Selected',
         
         // Workflow Panel
         myWorkflows: 'My Workflows',
@@ -542,7 +560,15 @@ const translations: Record<Language, Translations> = {
         authLogout: 'Logout',
         authSwitchToRegister: "Don't have an account? Register",
         authSwitchToLogin: 'Already have an account? Login',
+        portraitAssets: 'Portrait Assets',
+        portraitAssetLibrary: 'Portrait Asset Library',
+        managePortraitAssets: 'Manage Portrait Assets',
+        manage: 'Manage',
+        selectPortraitAsset: 'Select portrait asset',
+        noPortraitAssets: 'No portrait assets',
         deleteConfirmProject: 'Are you sure you want to delete this project?',
+        authenticationFailed: 'Authentication failed',
+        verificationFailed: 'Verification failed',
         
         // Storyboard Generator
         characters: 'Characters',
@@ -577,7 +603,6 @@ const translations: Record<Language, Translations> = {
         compositePreview: 'Composite Preview',
         generatingPreview: 'Generating preview...',
         clickToRegenerate: 'Click to regenerate',
-        selectedCount: 'selected',
         brainstormStory: 'Brainstorm Story',
         optimizingStory: 'Optimizing...',
         selectModel: 'Select Model',
@@ -823,6 +848,14 @@ const translations: Record<Language, Translations> = {
         duplicate: '复制一份',
         createAsset: '创建素材',
         processing: '处理中...',
+        refresh: '刷新',
+        audio: '音频',
+        comingSoon: '敬请期待',
+        seedanceComplianceLibrary: 'Seedance 2.0 合规素材库',
+        recordNewRealPerson: '录入新的真人',
+        startVerification: '开始认证',
+        portraitNotVerified: '未完成认证',
+        selectedCount: '已选',
         
         // Workflow Panel
         myWorkflows: '我的工作流',
@@ -938,7 +971,15 @@ const translations: Record<Language, Translations> = {
         authLogout: '退出登录',
         authSwitchToRegister: '还没有账号？立即注册',
         authSwitchToLogin: '已有账号？立即登录',
+        portraitAssets: '真人人像资产',
+        portraitAssetLibrary: '真人人像资产库',
+        managePortraitAssets: '管理真人人像资产',
+        manage: '管理',
+        selectPortraitAsset: '选择真人人像素材',
+        noPortraitAssets: '暂无真人人像素材',
         deleteConfirmProject: '确定要删除这个项目吗？',
+        authenticationFailed: '认证失败',
+        verificationFailed: '认证失败',
         
         // Storyboard Generator
         characters: '角色',
@@ -973,7 +1014,6 @@ const translations: Record<Language, Translations> = {
         compositePreview: '合成预览',
         generatingPreview: '正在生成预览...',
         clickToRegenerate: '点击重新生成',
-        selectedCount: '已选',
         brainstormStory: '故事灵感',
         optimizingStory: '优化中...',
         selectModel: '选择模型',

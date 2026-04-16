@@ -18,6 +18,7 @@
     "electron:build:win": "vite build && electron-builder --win",
     "electron:build:linux": "vite build && electron-builder --linux",
     "db:init": "node scripts/init-database.cjs",
+    "db:migrate:portrait": "node scripts/migrate-portrait-assets.cjs",
     "test:integration": "node scripts/integration-test.cjs",
     "test": "node scripts/integration-test.cjs"
   },
@@ -33,6 +34,7 @@
     "@types/three": "^0.182.0",
     "bcryptjs": "^3.0.3",
     "cos-nodejs-sdk-v5": "^2.15.0",
+    "@volcengine/openapi": "^1.32.0",
     "electron-store": "^8.2.0",
     "express-validator": "^7.3.2",
     "face-api.js": "^0.22.2",

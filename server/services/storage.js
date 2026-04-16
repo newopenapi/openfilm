@@ -19,7 +19,7 @@ export function isCosEnabled() {
   const configured = !!(sid && sk && bucket);
   if (provider === 'cos') return configured;
   if (process.env.USE_TENCENT_COS === '1') return configured;
-  return configured;
+  return false; // 当未明确启用 COS 时，默认返回 false，使用本地存储
 }
 
 function guessContentType(ext) {

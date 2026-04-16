@@ -79,6 +79,8 @@ export function resolveImageToBase64(input) {
 
 export async function resolveImageToBase64Async(input) {
     if (!input) return null;
+    if (typeof input === 'string' && input.startsWith('asset://')) return input;
+    if (input.startsWith('data:')) return input;
     if (input.startsWith('data:')) return input;
     const asLocal = resolveImageToBase64(input);
     if (asLocal) return asLocal;

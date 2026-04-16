@@ -157,6 +157,7 @@ export async function generateVolcanoVideo({
     generateAudio,
     watermark,
     returnLastFrame,
+    portraitAssetId,
     apiKey,
     baseUrl = DEFAULT_BASE_URL
 }) {
@@ -182,7 +183,7 @@ export async function generateVolcanoVideo({
     const addImageToContent = (base64Data, role) => {
         if (!base64Data) return;
         const rawBase64 = extractRawBase64(base64Data) || base64Data;
-        if (base64Data.startsWith('http://') || base64Data.startsWith('https://')) {
+        if (base64Data.startsWith('http://') || base64Data.startsWith('https://') || base64Data.startsWith('asset://')) {
             content.push({
                 type: 'image_url',
                 image_url: { url: base64Data },
@@ -255,6 +256,11 @@ export async function generateVolcanoVideo({
         extraBody.return_last_frame = !!returnLastFrame;
     }
 
+    // Portrait asset parameter (Seedance 2.0 API)
+    if (portraitAssetId) {
+        extraBody.portrait_asset_id = portraitAssetId;
+    }
+    
     // Add extra_body only if there are advanced parameters
     if (Object.keys(extraBody).length > 0) {
         body.extra_body = extraBody;

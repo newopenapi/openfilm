@@ -140,6 +140,26 @@ export default function App() {
     initI18n();
     setCurrentLang(getLanguage());
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bytedToken = params.get('bytedToken');
+    const resultCode = params.get('resultCode');
+    if (!bytedToken) return;
+
+    apiRequest('/portrait/resolve', {
+      method: 'POST',
+      body: JSON.stringify({ bytedToken, resultCode })
+    }).finally(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('bytedToken');
+      url.searchParams.delete('resultCode');
+      url.searchParams.delete('algorithmBaseRespCode');
+      url.searchParams.delete('reqMeasureInfoValue');
+      url.searchParams.delete('verify_type');
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    });
+  }, []);
   
   // Language toggle function
   const handleToggleLanguage = () => {

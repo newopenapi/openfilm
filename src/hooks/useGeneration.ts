@@ -328,6 +328,9 @@ export const useGeneration = ({ nodes, updateNode, onAfterSuccess }: UseGenerati
 
                 // Get first frame image for Seedance 2.0 (图生视频的起始画面)
                 let referenceImageBase64: string | undefined;
+                if (node.portraitAssetId) {
+                    referenceImageBase64 = `asset://${node.portraitAssetId}`;
+                }
                 if (node.referenceImageNodeId) {
                     const refImageNode = nodes.find(n => n.id === node.referenceImageNodeId);
                     if (refImageNode?.resultUrl) {
@@ -361,6 +364,7 @@ export const useGeneration = ({ nodes, updateNode, onAfterSuccess }: UseGenerati
                     cameraFixed: node.cameraFixed, // Seedance 2.0 advanced parameter
                     watermark: node.watermark, // Seedance 2.0 advanced parameter
                     returnLastFrame: node.returnLastFrame, // Seedance 2.0 advanced parameter
+                    portraitAssetId: node.portraitAssetId, // Real-person portrait asset ID for Seedance
                     nodeId: id
                 });
 

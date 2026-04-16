@@ -352,7 +352,7 @@ router.post('/generate-image', authenticateToken, async (req, res) => {
 
 router.post('/generate-video', authenticateToken, async (req, res) => {
     try {
-        const { nodeId, prompt, imageBase64: rawImageBase64, lastFrameBase64: rawLastFrameBase64, styleReferenceBase64: rawStyleReferenceBase64, referenceImageBase64: rawReferenceImageBase64, endFrameImageBase64: rawEndFrameImageBase64, motionReferenceUrl: rawMotionReferenceUrl, aspectRatio, resolution, duration, videoModel, seed, cameraFixed, generateAudio, watermark, returnLastFrame } = req.body;
+        const { nodeId, prompt, imageBase64: rawImageBase64, lastFrameBase64: rawLastFrameBase64, styleReferenceBase64: rawStyleReferenceBase64, referenceImageBase64: rawReferenceImageBase64, endFrameImageBase64: rawEndFrameImageBase64, motionReferenceUrl: rawMotionReferenceUrl, aspectRatio, resolution, duration, videoModel, seed, cameraFixed, generateAudio, watermark, returnLastFrame, portraitAssetId } = req.body;
         const { GEMINI_API_KEY, KLING_ACCESS_KEY, KLING_SECRET_KEY, KLING_BASE_URL, HAILUO_API_KEY, HAILUO_BASE_URL, FAL_API_KEY, FAL_BASE_URL, VOLCANO_API_KEY, VOLCANO_BASE_URL, VIDEOS_DIR } = req.app.locals;
 
         // === BILLING CHECK & DEDUCT ===
@@ -443,6 +443,7 @@ router.post('/generate-video', authenticateToken, async (req, res) => {
                 generateAudio,
                 watermark,
                 returnLastFrame,
+                portraitAssetId,
                 apiKey: VOLCANO_API_KEY,
                 baseUrl: VOLCANO_BASE_URL
             });

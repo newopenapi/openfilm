@@ -50,9 +50,10 @@ export interface RegisterData {
 export async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   
+  const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(isForm ? {} : { 'Content-Type': 'application/json' }),
+    ...options.headers,
   };
   
   if (token) {
